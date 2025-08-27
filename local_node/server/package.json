@@ -1,0 +1,22 @@
+{
+  "name": "lyquor_local_node_server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "ts-node ./index.ts",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "@hono/node-ws": "^1.2.0",
+    "@xterm/xterm": "^5.5.0",
+    "hono": "^4.9.4",
+    "node-pty": "^1.0.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}

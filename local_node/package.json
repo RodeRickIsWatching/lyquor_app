@@ -1,0 +1,20 @@
+{
+  "private": true,
+  "scripts": {
+    "clean:apps": "pnpm -r --filter \"./server\" --filter \"./interface\" exec rimraf node_modules",
+    "clean:root": "rimraf node_modules",
+    "install:root": "pnpm install -w",
+    "install:apps": "pnpm -r --filter \"./server\" --filter \"./interface\" install",
+    "reinstall": "pnpm run clean:apps && pnpm run install:root && pnpm run install:apps",
+    "dev": "concurrently -n SERVER,UI -c blue,green \"pnpm --filter ./server dev\" \"pnpm --filter ./interface dev\"",
+    "reinstall:dev": "pnpm run reinstall && pnpm run dev",
+    "build": "pnpm --filter ./interface build && pnpm --filter ./server build",
+    "start": "pnpm --filter ./server start",
+    "nuke": "pnpm run clean:apps && pnpm run clean:root && rimraf pnpm-lock.yaml"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "rimraf": "^5.0.5"
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+}

@@ -1,0 +1,1 @@
+export const localWs = new WebSocket('ws://localhost:9527/ws')
