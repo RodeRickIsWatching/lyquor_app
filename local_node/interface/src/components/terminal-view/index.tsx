@@ -117,7 +117,7 @@ export default function TerminalView({
               JSON.stringify({
                 id,
                 type: "terminal",
-                data: { cmd: "sh", args: ["-lc", command] },
+                data: { cmd: "sh", args: ["-lc", command], id },
               })
             );
             history.current.push(command);
@@ -185,19 +185,24 @@ export default function TerminalView({
         if (msg?.id !== id) return;
 
         const t = msg.type as string;
+
         // 兼容两种事件命名：stdout/stderr/exit 与 terminal.*
         if (t === "stdout" || t === "terminal.stdout") {
           terminal.current?.write(String(msg.data ?? "").replace(/\n/g, "\r\n"));
         } else if (t === "stderr" || t === "terminal.stderr") {
+          const text = String(msg.data ?? "");
           terminal.current?.write(String(msg.data ?? "").replace(/\n/g, "\r\n"));
+          if (text.endsWith("\n")) {
+            showPrompt();
+          }
         } else if (t === "exit" || t === "terminal.exit") {
           const code = msg.data?.code ?? 0;
           if (code && Number(code) !== 0) {
             terminal.current?.writeln(`\r\n[process exited: ${code}]`);
           }
-          // 命令执行完成后在当前行显示新的提示符
           showPrompt();
         }
+
       } catch {
         // ignore
       }
@@ -205,6 +210,53 @@ export default function TerminalView({
     ws.addEventListener("message", onMsg);
     return () => ws.removeEventListener("message", onMsg);
   }, [id, ws]);
+
+  // 监听业务快捷事件：exec_cmd，把命令预填到当前终端输入行，并可选自动提交
+  useEffect(() => {
+    const onStart = (e: Event) => {
+      const ce = e as CustomEvent<any>;
+      const targetId = ce?.detail?.id;
+      if (targetId !== id) return;
+      const raw: string | undefined = ce?.detail?.cmd;
+      if (!raw) return;
+      const shouldSubmit: boolean = Boolean(ce?.detail?.submit) || /[\r\n]$/.test(raw);
+      const cmd = raw.replace(/[\r\n]+$/g, "");
+
+      inputBuffer.current = cmd;
+      redrawInput();
+      terminal.current?.focus();
+
+      if (!shouldSubmit) return;
+
+      const term = terminal.current;
+      if (!term) return;
+
+      // 模拟按下 Enter 的行为
+      if (cmd === "clear") {
+        term.write("\x1b[2J\x1b[3J\x1b[H");
+        inputBuffer.current = "";
+        showPrompt();
+        return;
+      }
+
+      term.write("\r\n");
+      if (cmd) {
+        wsRef.current?.send(
+          JSON.stringify({
+            id,
+            type: "terminal",
+            data: { cmd: "sh", args: ["-lc", cmd], id },
+          })
+        );
+        history.current.push(cmd);
+        historyIndex.current = history.current.length;
+      }
+      inputBuffer.current = "";
+      // 不立即 showPrompt，等待服务端 exit 事件
+    };
+    window.addEventListener('exec_cmd', onStart as EventListener);
+    return () => window.removeEventListener('exec_cmd', onStart as EventListener);
+  }, [id]);
 
   // 激活时聚焦 & 适配
   useEffect(() => {

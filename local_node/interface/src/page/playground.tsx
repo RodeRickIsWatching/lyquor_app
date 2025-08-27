@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router"
 import TerminalView from "@/components/terminal-view";
 import { localWs } from "@/constants/ws";
 import { Loader } from "lucide-react";
+import { sleep } from "@/utils";
 
 export const PlaygroundPage = () => {
   const navigate = useNavigate()
@@ -28,6 +29,12 @@ export const PlaygroundPage = () => {
     navigate(`/playground/${newId}`)
   }
 
+  const handleStartDevnet = async ()=>{
+    dispatchEvent(new CustomEvent('exec_cmd', {detail: { id, cmd: 'export PATH=\"$HOME/.shakenup/bin:$PATH\"', submit: true }}))
+    await sleep(2_000)
+    dispatchEvent(new CustomEvent('exec_cmd', {detail: { id, cmd: '~/.shakenup/bin/start-devnet', submit: true }}))
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
       <Card>
@@ -42,6 +49,7 @@ export const PlaygroundPage = () => {
           </CardDescription>
           <CardAction className="flex flex-wrap gap-2">
             <Button onClick={handleGeneratePlayground}>Add</Button>
+            <Button onClick={handleStartDevnet}>Start Devnet</Button>
           </CardAction>
         </CardHeader>
       </Card>
