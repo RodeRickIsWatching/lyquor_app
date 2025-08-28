@@ -5,9 +5,10 @@ import { v4 as uuidv4 } from "uuid"
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router"
 import TerminalView from "@/components/terminal-view";
-import { localWs } from "@/constants/ws";
 import { Loader } from "lucide-react";
 import { sleep } from "@/utils";
+
+const localWs = new WebSocket('ws://localhost:9527/ws')
 
 export const PlaygroundPage = () => {
   const navigate = useNavigate()
@@ -35,6 +36,14 @@ export const PlaygroundPage = () => {
     dispatchEvent(new CustomEvent('exec_cmd', {detail: { id, cmd: '~/.shakenup/bin/start-devnet', submit: true }}))
   }
 
+  const handleInterrupt = ()=>{
+    dispatchEvent(new CustomEvent('exec_cmd', {detail: { id, cmd: '__interrupt__', submit: true }}))
+  }
+
+  const handleTerminate = ()=>{
+    dispatchEvent(new CustomEvent('exec_cmd', {detail: { id, cmd: '__terminate__', submit: true }}))
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
       <Card>
@@ -50,6 +59,7 @@ export const PlaygroundPage = () => {
           <CardAction className="flex flex-wrap gap-2">
             <Button onClick={handleGeneratePlayground}>Add</Button>
             <Button onClick={handleStartDevnet}>Start Devnet</Button>
+            <Button onClick={handleInterrupt}>Stop</Button>
           </CardAction>
         </CardHeader>
       </Card>

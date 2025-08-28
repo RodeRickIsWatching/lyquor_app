@@ -1,0 +1,1 @@
+export const defaultPort = import.meta.env.VITE_APP_WS_PORT.toString()

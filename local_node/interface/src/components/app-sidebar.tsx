@@ -31,6 +31,7 @@ import {
 import { usePlaygroundTree } from "@/stores/playground-tree-store";
 import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
+import { defaultPort } from "@/constants";
 
 // This is sample data.
 const data = {
@@ -46,7 +47,7 @@ const data = {
       state: <ArrowUpRightFromSquareIcon className="size-3" />,
     },
   ],
-  tree: ["Explorer"],
+  tree: ["Explorer", ["Port", defaultPort]],
 };
 
 // 树节点类型定义，避免 any
@@ -279,13 +280,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   );
 }
 
-function Tree({ item }: { item: TreeNode }) {
+function Tree({ item, linkPrefix }: { item: TreeNode, linkPrefix?: string }) {
   const [name, ...items] = Array.isArray(item) ? item : [item];
 
   if (!items.length) {
     return (
       <>
-        <Link to={"/" + name.toLowerCase()}>
+        <Link to={"/" + (linkPrefix ? `${linkPrefix}/` : '')+ name.toLowerCase()}>
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={name === "button.tsx"}
@@ -314,7 +315,7 @@ function Tree({ item }: { item: TreeNode }) {
         <CollapsibleContent>
           <SidebarMenuSub>
             {items.map((subItem, index) => (
-              <Tree key={index} item={subItem as TreeNode} />
+              <Tree key={index} item={subItem as TreeNode} linkPrefix={name?.toLowerCase()} />
             ))}
           </SidebarMenuSub>
         </CollapsibleContent>
