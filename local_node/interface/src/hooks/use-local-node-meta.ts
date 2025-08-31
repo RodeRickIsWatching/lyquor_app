@@ -1,27 +1,51 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { create } from "zustand";
 import { useLocalNodeWs } from "@/hooks/use-local-node-ws";
+import { toast } from "sonner";
+import { lyquorTestnetHttp } from "@/constants";
 import { lyquidRpcCommands } from "@/utils/method-factory";
 
 
-// ---------- Types ----------
+export interface LyquorLatestInfo {
+  contract: string;
+  number: {
+    image: number;
+    var: number;
+  };
+}
+
+export interface LyquorConsole {
+  line_id: number;
+  line_num: number;
+  text: string;
+}
+
+export interface NodeOverview {
+  lyquor_getLatestLyquidInfo: LyquorLatestInfo;
+  lyquor_readConsole: LyquorConsole;
+  net_version: string;
+  eth_blockNumber: string;
+  eth_gasPrice: string;
+  eth_chainId: string;
+}
+
+
 export type ConsoleSnapshot = {
   lineId?: number;
   lineNum?: number;
   text?: string;
 };
 
-export type LyquidItemMeta = {
-  id: string;
-  latestInfo?: any; // LyquidInfo | null
-  console?: ConsoleSnapshot; // last readConsole snapshot
+export interface LyquidItemMeta extends NodeOverview {
+  [key: string]: any;
 };
 
 export type NodeMeta = {
   port: string;
   fetchedAt?: number;
   lyquids: string[];
-  items: Record<string, LyquidItemMeta>; // key by lyquid id
+  patch?: Record<string, LyquidItemMeta>; // key by lyquid id
 };
 
 // ---------- Store (per app, keyed by port) ----------
@@ -32,7 +56,7 @@ type NodeMetaStoreState = {
   setLoading: (port: string, v: boolean) => void;
   setError: (port: string, err: string | null) => void;
   upsertNode: (port: string, patch: Partial<NodeMeta>) => void;
-  upsertItem: (port: string, lyquidId: string, patch: Partial<LyquidItemMeta>) => void;
+  upsertItem: (port: string, lyquidId: string, patch?: Partial<LyquidItemMeta>) => void;
   reset: (port: string) => void;
 };
 
@@ -49,7 +73,6 @@ export const useLocalNodeMetaStore = create<NodeMetaStoreState>((set) => ({
       const prev: NodeMeta = s.nodesByPort[port] ?? {
         port,
         lyquids: [],
-        items: {},
       };
       return { nodesByPort: { ...s.nodesByPort, [port]: { ...prev, ...patch } } };
     }),
@@ -58,12 +81,13 @@ export const useLocalNodeMetaStore = create<NodeMetaStoreState>((set) => ({
       const prevNode: NodeMeta = s.nodesByPort[port] ?? {
         port,
         lyquids: [],
-        items: {},
+        patch: {},
       };
-      const prevItem: LyquidItemMeta = prevNode.items[lyquidId] ?? { id: lyquidId };
+
+      const prevItem = prevNode.patch?.[lyquidId] ?? {} as LyquidItemMeta;
       const nextNode: NodeMeta = {
         ...prevNode,
-        items: { ...prevNode.items, [lyquidId]: { ...prevItem, ...patch } },
+        patch: { ...prevNode.patch, [lyquidId]: { ...prevItem, ...patch } },
       };
       return { nodesByPort: { ...s.nodesByPort, [port]: nextNode } };
     }),
@@ -79,60 +103,27 @@ export const useLocalNodeMetaStore = create<NodeMetaStoreState>((set) => ({
     }),
 }));
 
-// ---------- Helper: JSON-RPC call with id correlation ----------
-
-type Pending = { method: string; resolve: (v: any) => void; reject: (e: any) => void };
-
 // Hook returns port-scoped meta and a refresh()
 export function useLocalNodeMeta(port: string) {
-  const idRef = useRef(1);
-  const pendingRef = useRef<Record<number, Pending>>({});
 
   const { upsertNode, upsertItem, setLoading, setError } = useLocalNodeMetaStore();
   const node = useLocalNodeMetaStore((s) => s.nodesByPort[port]);
   const loading = useLocalNodeMetaStore((s) => s.loadingByPort[port] ?? false);
   const error = useLocalNodeMetaStore((s) => s.errorByPort[port] ?? null);
+  const idRef = useRef<number>(1)
 
-  const { sendMessage, readyState } = useLocalNodeWs(port, {
-    onMessage: (evt) => {
-      try {
-        const msg = JSON.parse(evt.data);
-        // Handle normal responses
-        if (msg && typeof msg === "object" && "id" in msg) {
-          const p = pendingRef.current[msg.id as number];
-          if (p) {
-            delete pendingRef.current[msg.id as number];
-            if ("result" in msg) p.resolve(msg.result);
-            else if ("error" in msg) p.reject(msg.error);
-            return;
-          }
-        }
-        // TODO: handle subscriptions here if needed later
-      } catch (e) {
-        // ignore
-      }
-    },
-  });
+  const callRpc = async (method: string, params?: any, ctx?: any) => {
 
-  const callRpc = useCallback(
-    (method: keyof typeof lyquidRpcCommands, params?: any, ctx?: Record<string, string>) => {
-      return new Promise<any>((resolve, reject) => {
-        if (readyState !== WebSocket.OPEN) {
-          reject(new Error("WebSocket not connected"));
-          return;
-        }
-        const id = idRef.current++;
-        pendingRef.current[id] = { method, resolve, reject };
-        const payload = lyquidRpcCommands[method].buildPayload(
-          params === undefined ? lyquidRpcCommands[method].defaultParams : params,
-          id,
-          ctx ?? {}
-        );
-        sendMessage(payload);
-      });
-    },
-    [readyState, sendMessage]
-  );
+    const id = idRef.current++
+    const payload = lyquidRpcCommands[method].buildPayload(params, 'glob_' + id, ctx)
+
+    const resp = await fetch(lyquorTestnetHttp, {
+      method: "POST",
+      body: payload
+    })
+    const result = await resp.json()
+    return result?.result
+  }
 
   const refresh = useCallback(async () => {
     setLoading(port, true);
@@ -145,19 +136,29 @@ export function useLocalNodeMeta(port: string) {
       // 2) for each lyquid: fetch latest info + read console (in parallel per id)
       const perIdTasks = lyquids.map(async (id) => {
         try {
-          const [latestInfo, consoleSnap] = await Promise.all([
-            callRpc("lyquor_getLatestLyquidInfo", [id], { lyquid_id: id }),
-            callRpc(
-              "lyquor_readConsole",
-              // use default with placeholder <lyquid_id>
-              undefined,
-              { lyquid_id: id }
-            ),
-          ]);
-          upsertItem(port, id, { id, latestInfo, console: consoleSnap });
-        } catch (e) {
-          // keep going for other ids
-          upsertItem(port, id, { id });
+          const params = {
+            lyquor_getLatestLyquidInfo: callRpc("lyquor_getLatestLyquidInfo", [id], { lyquid_id: id }),
+            lyquor_readConsole: callRpc("lyquor_readConsole", undefined, { lyquid_id: id }),
+            net_version: callRpc("net_version"),
+            eth_blockNumber: callRpc("eth_blockNumber"),
+            eth_gasPrice: callRpc("eth_gasPrice"),
+            eth_chainId: callRpc("eth_chainId"),
+          }
+          const nodeMetas = await Promise.all(Object.values(params));
+
+          console.log('nodeMetas', nodeMetas)
+          const result = Object.keys(params).reduce((prev: any, next: string, index: number) => {
+            const value = nodeMetas[index] as LyquidItemMeta
+
+            return {
+              ...prev,
+              [next]: value
+            }
+          }, {})
+
+          upsertItem(port, id, result);
+        } catch (e: any) {
+          toast.error(e)
         }
       });
 
@@ -172,15 +173,12 @@ export function useLocalNodeMeta(port: string) {
 
   // Auto trigger when connected
   useEffect(() => {
-    if (readyState === WebSocket.OPEN) {
-      refresh();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readyState, port]);
+    refresh();
+  }, [port]);
 
   return useMemo(
     () => ({
-      meta: node ?? { port, lyquids: [], items: {} },
+      meta: node ?? { port, lyquids: [], patch: {} },
       loading,
       error,
       refresh,

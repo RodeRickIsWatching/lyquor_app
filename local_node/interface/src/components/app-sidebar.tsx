@@ -47,7 +47,7 @@ const data = {
       state: <ArrowUpRightFromSquareIcon className="size-3" />,
     },
   ],
-  tree: ["Explorer", ["Port", defaultPort]],
+  tree: ["Lyquid", [`Port/${defaultPort}`]],
 };
 
 // 树节点类型定义，避免 any

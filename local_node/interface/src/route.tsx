@@ -1,5 +1,7 @@
 import NavLayout from "@/layouts/nav-layout";
 import { ExplorerPage } from "@/page/explorer";
+import { SpecificLyquidPage } from "@/page/lyquid/[lyquid_id]/page";
+import { LyquidPage } from "@/page/lyquid/page";
 import { SpecificNodePage } from "@/page/node/[port]/page";
 import { NodePage } from "@/page/node/page";
 import { PlaygroundPage } from "@/page/playground";
@@ -22,6 +24,16 @@ export const router = createBrowserRouter([
             path: ':id',
             element: <PlaygroundPage />,
           },
+        ]
+      },
+      {
+        path: 'lyquid',
+        element: <LyquidPage />,
+        children: [
+          {
+            path: ':lyquid_id',
+            element: <SpecificLyquidPage />,
+          }
         ]
       },
       {

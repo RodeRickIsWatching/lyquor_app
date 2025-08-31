@@ -16,9 +16,14 @@ import {
   useMatches,
 } from "react-router";
 import { Separator } from "@/components/ui/separator";
+import { defaultPort } from "@/constants";
+import { useLocalNodeMeta } from "@/hooks/use-local-node-meta";
+import { useBlockUpdater } from "@/hooks/use-block-updater";
 
 export default function NavLayout() {
   const matches = useMatches();
+  useLocalNodeMeta(defaultPort);
+  useBlockUpdater(defaultPort);
 
   return (
     <SidebarProvider>

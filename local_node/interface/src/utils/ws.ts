@@ -1,3 +1,5 @@
+import { lyquorTestnetWs } from "@/constants";
+
 // ws/localNodeWs.ts
 type EventType = "open" | "message" | "error" | "close";
 
@@ -19,7 +21,7 @@ class NodeWsInstance {
   private stateSubscribers = new Set<() => void>();
 
   constructor(port: string | number) {
-    this.ws = new WebSocket(`ws://localhost:${port}/ws`);
+    this.ws = new WebSocket(lyquorTestnetWs);
     this.bind();
   }
 
