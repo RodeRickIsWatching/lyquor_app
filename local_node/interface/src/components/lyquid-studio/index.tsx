@@ -150,7 +150,7 @@ contract Contract {
           <CardContent className="p-0 h-full">
             <Editor
               onMount={(editor) => { editorRef.current = editor }}
-              defaultLanguage="solidity"
+              defaultLanguage="rust"
               value={code}
               theme={theme == 'light' ? "light" : "vs-dark"}
               onChange={(val) => setCode(val ?? "")}
