@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -95,6 +95,16 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
     execToTerminal("clear", true);
   }, []);
 
+  useEffect(()=>{
+    editorWs.onopen = ()=>{
+      editorWs.send(JSON.stringify({
+        id: "editor-1", // 请求 id，用来对应回调
+        type: "tree:get",
+        data: { namespace: "app-1" },
+      }))
+    }
+   
+  }, [])
   return (
     <Card className="flex flex-col overflow-hidden pb-0 gap-0">
       <CardHeader className="flex flex-row justify-between items-center pb-6">

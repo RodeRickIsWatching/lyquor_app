@@ -1,17 +1,18 @@
 // /server/dispatcher/editor_dispatch.ts
-import { existsSync, promises as fs } from "fs";
+import { promises as fs } from "fs";
 import * as path from "path";
 import type { LyquorEvent } from "../../interface";
 import { scanDirectory } from "../../utils/scanDirectory.ts";
-import AdmZip from "adm-zip";
+import { fileURLToPath } from "url";
+import { path7za } from "7zip-bin";
+import pkg from "node-7z";
+const { extractFull } = pkg;
 
 // ===== 配置：所有 workspace 的根目录 =====
-const WORKSPACES_ROOT = process.env.WORKSPACES_ROOT
-  ? path.resolve(process.env.WORKSPACES_ROOT)
-  : path.resolve("../../lyquid-editor-workspace");
-
-// const TEMPLATE_DIR = path.resolve("../../ldk-template");
-const TEMPLATE_ZIP = path.resolve("../../ldk-template.zip");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const WORKSPACES_ROOT = path.resolve(__dirname, "../../lyquid-editor-workspace");
+const TEMPLATE_ZIP = path.resolve(__dirname, "../../ldk-template.7z");
 
 
 // ====== 公共类型 ======
@@ -71,41 +72,29 @@ async function pathIsDirectory(absPath: string): Promise<boolean> {
   return s.isDirectory();
 }
 
-/** 递归读取目录，生成树（文件夹在前，文件在后，按名称排序） */
-async function readDirRecursive(dir: string, base = dir): Promise<FileTreeNode[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  const folders: FileTreeNode[] = [];
-  const files: FileTreeNode[] = [];
-
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    const relPath = path.relative(base, full).split(path.sep).join("/");
-
-    if (entry.isDirectory()) {
-      folders.push({
-        type: "folder",
-        name: entry.name,
-        path: relPath,
-        children: await readDirRecursive(full, base),
-      });
-    } else {
-      files.push({
-        type: "file",
-        name: entry.name,
-        path: relPath,
-      });
-    }
+async function isDirEmpty(dir: string): Promise<boolean> {
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    // 如果要忽略噪声文件可在这里过滤 .DS_Store / .gitkeep 等
+    return entries.length === 0;
+  } catch (e: any) {
+    if (e.code === "ENOENT") return true; // 目录不存在 → 视为“空”
+    throw e;
   }
-
-  folders.sort((a, b) => a.name.localeCompare(b.name));
-  files.sort((a, b) => a.name.localeCompare(b.name));
-  return [...folders, ...files];
 }
 
+export async function extractTemplate7z(targetDir: string) {
+  const archivePath = TEMPLATE_ZIP;
 
-async function extractTemplateZip(destDir: string) {
-  const zip = new AdmZip(TEMPLATE_ZIP);
-  zip.extractAllTo(destDir, true);
+  return new Promise<void>((resolve, reject) => {
+    const stream = extractFull(archivePath, targetDir, {
+      $bin: path7za,
+      $progress: true,
+    });
+
+    stream.on("end", () => resolve());
+    stream.on("error", (err) => reject(err));
+  });
 }
 
 // ====== Dispatcher 实现 ======
@@ -113,12 +102,12 @@ export const editorDispatcherMap: EditorDispatcherMap = {
   // -- Tree
   "tree:get": {
     handler: async (data, sink) => {
-      const workspaceDir = path.join(WORKSPACES_ROOT, data.namespace);
+      const workspaceDir = await ensureNamespaceDir(data.namespace);
 
       // 如果 workspace 不存在，先拷贝模板
-      if (!existsSync(workspaceDir)) {
+      if (await isDirEmpty(workspaceDir)) {
         await fs.mkdir(workspaceDir, { recursive: true });
-        await extractTemplateZip(workspaceDir);
+        await extractTemplate7z(workspaceDir);
       }
 
       // 扫描 workspace
