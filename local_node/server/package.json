@@ -10,11 +10,15 @@
     "@hono/node-server": "^1.19.0",
     "@hono/node-ws": "^1.2.0",
     "@xterm/xterm": "^5.5.0",
+    "adm-zip": "^0.5.16",
+    "fs-extra": "^11.3.1",
     "hono": "^4.9.4",
     "node-pty": "^1.0.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"

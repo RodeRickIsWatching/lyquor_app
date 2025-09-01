@@ -2,17 +2,10 @@ import { lyquor_dispatch } from '../../dispatcher/index.ts'
 import type { LyquorEvent, LyquorRequest } from '../../interface/index.ts'
 import type { Hono } from 'hono'
 import { createNodeWebSocket } from '@hono/node-ws'
+import { editor_dispatch } from '../../dispatcher/editor/index.ts'
 
-/**
- * 将 WebSocket 服务器挂载到现有的 HTTP 服务器上
- * 这样可以共享同一个端口，避免端口冲突
- * @param server - HTTP 服务器实例，WebSocket 将挂载到其上
- * @returns WebSocket 服务器实例
- */
-export function registerWsHandlers({ app }: { app: Hono }): { injectWebSocket: any, wss: any } {
-  const { wss, injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
-
-  app.get('/ws', upgradeWebSocket((c) => {
+function createHandler(dispatch: Function) {
+  return (c: any) => {
     return {
       onMessage(event, ws) {
         let msg: LyquorRequest
@@ -25,15 +18,25 @@ export function registerWsHandlers({ app }: { app: Hono }): { injectWebSocket: a
 
         const { type, data, id } = msg || {}
         try {
-          lyquor_dispatch(type, data, (evt: LyquorEvent) => {
+          dispatch(type, data, (evt: LyquorEvent) => {
             ws.send(JSON.stringify({ ...evt, id }))
           })
-        } catch (err) {
+        } catch (err: any) {
           ws.send(JSON.stringify({ type: 'error', data: String(err?.message || err), id }))
         }
       }
     }
-  }))
+  }
+}
+
+export function registerWsHandlers({ app }: { app: Hono }) {
+  const { wss, injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
+
+  // 全局 dispatcher
+  app.get('/ws', upgradeWebSocket(createHandler(lyquor_dispatch)))
+
+  // editor 专用 dispatcher
+  app.get('/editor', upgradeWebSocket(createHandler(editor_dispatch)))
 
   return { injectWebSocket, wss }
 }

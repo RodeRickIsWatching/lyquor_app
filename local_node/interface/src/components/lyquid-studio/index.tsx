@@ -6,7 +6,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Dock, Trash2, Save, Play, Rocket } from "lucide-react";
 import TerminalView from "@/components/terminal-view";
 import { useThemeStore } from "@/stores/theme-store";
-import { terminalTestnetWs } from "@/constants";
+import { editorTestnetWs, terminalTestnetWs } from "@/constants";
 import { cn } from "@/lib/utils";
 import WorkspaceEditor from "@/components/lyquid-studio/workspace-editor";
 import WorkspaceTree from "@/components/lyquid-studio/workspace-tree";
@@ -15,6 +15,7 @@ import { useWorkspaceStore } from "@/stores/workspace-store";
 const terminalWs = new WebSocket(terminalTestnetWs);
 type Layout = "bottom" | "right";
 const TERM_ID = "lyquid-studio-term";
+const editorWs = new WebSocket(editorTestnetWs)
 
 // ---- 发命令到终端 ----
 function execToTerminal(cmd: string, submit = true) {

@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-lyquid = { path = "../../lyquid/", features = ["ldk"] }
+lyquid = { path = "../../lyquid/", features = ["ldk"] } # Do not Change
 
 [lib]
 crate-type = ["cdylib", "rlib"]
