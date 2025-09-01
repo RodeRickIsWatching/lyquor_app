@@ -53,7 +53,8 @@ const data = {
       state: <ArrowUpRightFromSquareIcon className="size-3" />,
     },
   ],
-  tree: ["Lyquid", [`Port/${defaultPort}`]],
+  tree: ["Lyquid"],
+  // tree: ["Lyquid", [`Port/${defaultPort}`]],
 };
 
 // 树节点类型定义，避免 any
@@ -299,7 +300,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <PlaygroundMenu />
+              {/* <PlaygroundMenu /> */}
               {data.tree.map((item, index) => (
                 <Tree key={index} item={item as TreeNode} />
               ))}
