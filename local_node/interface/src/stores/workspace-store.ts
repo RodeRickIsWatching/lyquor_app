@@ -32,7 +32,8 @@ type DeleteArgs = {
 type WorkspaceState = {
   tree: FileNode[]
   selectedId?: string
-  selectFile: (id: string | undefined) => void
+  selectedFile?: FileNode
+  selectFile: (file: FileNode | undefined) => void
   updateFileContent: (id: string, content: string) => void
 
   // 与 Arborist 事件一一对应（签名对齐官方）
@@ -150,10 +151,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     { id: "3", name: "Cargo.toml", type: "file" },
   ],
   selectedId: undefined,
+  selectedFile: undefined,
 
-  selectFile: (id) => {
+  selectFile: (file?: FileNode) => {
     console.log('selectFile')
-    set({ selectedId: id })
+    set({ selectedFile: file, selectedId: file?.id })
   },
 
   updateFileContent: (id, content) => {
