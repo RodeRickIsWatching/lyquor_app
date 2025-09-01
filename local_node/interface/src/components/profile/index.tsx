@@ -19,7 +19,7 @@ export const Profile = () => {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="default" size="sm" className="gap-2 py-5">
+          <Button variant="default" size="sm" className="gap-2 py-4">
             <Wallet className="h-4 w-4" />
             Connect Wallet
           </Button>
@@ -44,9 +44,9 @@ export const Profile = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center gap-2 py-5">
-          <Avatar className="h-6 w-6 ">
-            <AvatarFallback className="dark:bg-white bg-black text-white dark:text-black">
+        <Button variant="default" size="sm" className="flex items-center gap-2 py-4">
+          <Avatar className="size-5 text-xs ">
+            <AvatarFallback className="bg-white dark:bg-black dark:text-white text-black">
               {address?.slice(-2).toUpperCase()}
             </AvatarFallback>
           </Avatar>

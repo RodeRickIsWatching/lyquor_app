@@ -1,8 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import type { Abi, AbiFunction } from "viem";
-import { decodeFunctionResult, encodeFunctionData, isAddress, parseEther } from "viem";
+import {
+    decodeFunctionResult,
+    encodeFunctionData,
+    isAddress,
+    parseEther,
+} from "viem";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import {
@@ -59,15 +64,27 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Upload, Clipboard, Info, MoreVertical, Pencil, Trash2, Save } from "lucide-react";
+import {
+    Upload,
+    Clipboard,
+    Info,
+    MoreVertical,
+    Pencil,
+    Trash2,
+    Save,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { lyquorTestnetHttp } from "@/constants";
+import { lyquorTestnetHttp, lyquorTestnetPort } from "@/constants";
 import { lyquidRpcCommands } from "@/utils/method-factory";
 import { usePreLog } from "@/components/pre-log";
+import { useWriteContract } from "@/hooks/use-write-contract";
+import { lyquorTestnet } from "@/constants/chain";
+import { useLocalNodeMetaStore, type LyquidItemMeta } from "@/hooks/use-local-node-meta";
 
 // ---------------------------------------------------------------------
 // helpers
-const fnKey = (f: AbiFunction) => `${f.name}(${f.inputs?.map((i) => i.type).join(",")})`;
+const fnKey = (f: AbiFunction) =>
+    `${f.name}(${f.inputs?.map((i) => i.type).join(",")})`;
 
 function tryJson<T = any>(v: string): T {
     return JSON.parse(v);
@@ -77,7 +94,8 @@ function coerceArg(raw: string, type: string): any {
     if (raw === "" || raw == null) return undefined;
     try {
         if (type.endsWith("[]") || type.startsWith("tuple")) return tryJson(raw);
-        if (type.startsWith("uint") || type.startsWith("int")) return raw.startsWith("0x") ? BigInt(raw) : BigInt(raw);
+        if (type.startsWith("uint") || type.startsWith("int"))
+            return raw.startsWith("0x") ? BigInt(raw) : BigInt(raw);
         if (type === "bool") return raw === "true" || raw === "1";
         return raw;
     } catch (e) {
@@ -123,15 +141,24 @@ export const useAbiVault = create<AbiVaultState>()(
             currentId: undefined,
             add: (name, abi) => {
                 const id = uid();
-                const entry: SavedAbi = { id, name: name || `ABI-${new Date().toISOString()}`, abi, createdAt: Date.now() };
+                const entry: SavedAbi = {
+                    id,
+                    name: name || `ABI-${new Date().toISOString()}`,
+                    abi,
+                    createdAt: Date.now(),
+                };
                 set((s) => ({ items: [entry, ...s.items], currentId: id }));
                 return id;
             },
-            remove: (id) => set((s) => ({
-                items: s.items.filter((x) => x.id !== id),
-                currentId: s.currentId === id ? undefined : s.currentId,
-            })),
-            rename: (id, name) => set((s) => ({ items: s.items.map((x) => (x.id === id ? { ...x, name } : x)) })),
+            remove: (id) =>
+                set((s) => ({
+                    items: s.items.filter((x) => x.id !== id),
+                    currentId: s.currentId === id ? undefined : s.currentId,
+                })),
+            rename: (id, name) =>
+                set((s) => ({
+                    items: s.items.map((x) => (x.id === id ? { ...x, name } : x)),
+                })),
             select: (id) => set(() => ({ currentId: id })),
             getById: (id) => get().items.find((x) => x.id === id),
         }),
@@ -143,11 +170,22 @@ export const useAbiVault = create<AbiVaultState>()(
     )
 );
 
-// ---------------------------------------------------------------------
 // component
 export function LyquidInstance({ lyquid_id }: any) {
+    const { nodesByPort } = useLocalNodeMetaStore()
+    const nodeMeta = lyquid_id ? (nodesByPort?.[lyquorTestnetPort]?.patch?.[lyquid_id] || {}) : {}
+
+    const { lyquor_getLatestLyquidInfo = {} }: any = nodeMeta as LyquidItemMeta
+    useEffect(()=>{
+        if(lyquor_getLatestLyquidInfo?.contract){
+            setContract(lyquor_getLatestLyquidInfo?.contract)
+        }
+    }, [lyquor_getLatestLyquidInfo?.contract])
+
+    
     // pull from vault
-    const { items, currentId, select, add, remove, rename, getById } = useAbiVault();
+    const { items, currentId, select, add, remove, rename, getById } =
+        useAbiVault();
 
     // local ABI (reflects current selection)
     const currentAbi = getById(currentId)?.abi ?? null;
@@ -171,12 +209,17 @@ export function LyquidInstance({ lyquid_id }: any) {
     const [dataOverride, setDataOverride] = React.useState("");
 
     // per-function inputs
-    const [fnInputs, setFnInputs] = React.useState<Record<string, Record<string, string>>>({});
-    const [fnParamsJson, setFnParamsJson] = React.useState<Record<string, string>>({});
+    const [fnInputs, setFnInputs] = React.useState<
+        Record<string, Record<string, string>>
+    >({});
+    const [fnParamsJson, setFnParamsJson] = React.useState<
+        Record<string, string>
+    >({});
 
     const parseIncomingAbi = (json: any) => {
         const incoming = Array.isArray(json) ? json : json?.abi;
-        if (!incoming || !Array.isArray(incoming)) throw new Error("JSON 不包含 ABI 数组");
+        if (!incoming || !Array.isArray(incoming))
+            throw new Error("JSON 不包含 ABI 数组");
         return incoming as Abi;
     };
 
@@ -189,7 +232,8 @@ export function LyquidInstance({ lyquid_id }: any) {
                 const text = String(ev.target?.result || "");
                 const json = JSON.parse(text);
                 const parsed = parseIncomingAbi(json);
-                const name = abiName || file.name.replace(/\.json$/i, "") || `ABI-${Date.now()}`;
+                const name =
+                    abiName || file.name.replace(/\.json$/i, "") || `ABI-${Date.now()}`;
                 const id = add(name, parsed);
                 select(id);
                 appendLog(`[info] ABI loaded from file: ${name}`);
@@ -222,13 +266,15 @@ export function LyquidInstance({ lyquid_id }: any) {
     };
 
     // logs
-    const { appendLog, clearLog, PreLog } = usePreLog()
+    const { appendLog, clearLog, PreLog } = usePreLog();
     const idRef = React.useRef<number>(1);
-    // send function (encode only)
+
+    const { writeContractAsync } = useWriteContract();
     const sendFn = async (fn: AbiFunction) => {
         if (!abi) return appendLog("[warn] 请先选择/上传 ABI");
         if (!contract) return appendLog("[warn] 请输入合约地址");
-        if (!isAddress(contract)) appendLog("[warn] 合约地址格式似乎不对（仍然尝试编码 data）");
+        if (!isAddress(contract))
+            appendLog("[warn] 合约地址格式似乎不对（仍然尝试编码 data）");
 
         const key = fnKey(fn);
 
@@ -239,14 +285,32 @@ export function LyquidInstance({ lyquid_id }: any) {
                 if (!Array.isArray(arr)) throw new Error("Params JSON 必须是数组");
                 args = arr;
             } else {
-                args = (fn.inputs || []).map((i) => coerceArg(fnInputs[key]?.[i.name || ""] ?? "", i.type));
+                args = (fn.inputs || []).map((i) =>
+                    coerceArg(fnInputs[key]?.[i.name || ""] ?? "", i.type)
+                );
             }
         } catch (err: any) {
             return appendLog(`[error] 参数解析失败: ${err.message}`);
         }
 
         for (let i = args.length - 1; i >= 0; i--) {
-            if (args[i] === undefined) args.pop(); else break;
+            if (args[i] === undefined) args.pop();
+            else break;
+        }
+
+        const isRead =
+            fn.stateMutability === "view" || fn.stateMutability === "pure";
+        if (!isRead) {
+            const { tx } = await writeContractAsync({
+                abi,
+                functionName: fn.name,
+                args,
+                chainId: lyquorTestnet.id,
+                address: contract,
+            });
+
+            appendLog(`>> ${JSON.stringify(tx, (_, v) => typeof v === "bigint" ? v.toString() : v, 2)}`)
+            return;
         }
 
         let encoded: `0x${string}`;
@@ -256,30 +320,41 @@ export function LyquidInstance({ lyquid_id }: any) {
             return appendLog(`[error] ABI 编码失败: ${err.message}`);
         }
 
-        const valueWei = valueEth ? (() => { try { return parseEther(valueEth); } catch { return undefined; } })() : undefined;
+        const valueWei = valueEth
+            ? (() => {
+                try {
+                    return parseEther(valueEth);
+                } catch {
+                    return undefined;
+                }
+            })()
+            : undefined;
 
         const txForCall = {
             from: from || undefined,
             to: contract,
-            data: dataOverride && dataOverride.startsWith("0x") ? (dataOverride as `0x${string}`) : encoded,
+            data:
+                dataOverride && dataOverride.startsWith("0x")
+                    ? (dataOverride as `0x${string}`)
+                    : encoded,
             gas: gas || undefined,
             value: valueWei ? `0x${valueWei.toString(16)}` : undefined,
         } as const;
 
-        const isRead = fn.stateMutability === "view" || fn.stateMutability === "pure";
-
-        const method = isRead ? "eth_call" : "eth_sendTransaction"
-        const params = isRead ? [{ to: txForCall.to, data: txForCall.data }, "latest"] : [{ from: txForCall.from, to: txForCall.to, data: txForCall.data, gas: txForCall.gas, value: txForCall.value }]
-        const id = idRef.current++
+        const method = "eth_call";
+        const params = [{ to: txForCall.to, data: txForCall.data }, "latest"];
+        const id = idRef.current++;
         const cmd = lyquidRpcCommands[method];
-        const payload = cmd.buildPayload(params, 'ly_' + id, { lyquid_id: lyquid_id ?? "" });
+        const payload = cmd.buildPayload(params, "ly_" + id, {
+            lyquid_id: lyquid_id ?? "",
+        });
         appendLog(`>> ${payload}`);
         const resp = await fetch(lyquorTestnetHttp, {
             method: "POST",
-            body: payload
-        })
+            body: payload,
+        });
 
-        const result = await resp.json()
+        const result = await resp.json();
 
         const decoded = decodeFunctionResult({
             abi,
@@ -288,17 +363,21 @@ export function LyquidInstance({ lyquid_id }: any) {
         });
 
         appendLog(`<< ${JSON.stringify(result, null, 2)}`);
-        appendLog(`<< decode: ${decoded}`)
+        appendLog(`<< decode: ${decoded}`);
     };
 
     const functions: AbiFunction[] = React.useMemo(() => {
-        return (abi?.filter?.((i: any) => i?.type === "function") as AbiFunction[]) || [];
+        return (
+            (abi?.filter?.((i: any) => i?.type === "function") as AbiFunction[]) || []
+        );
     }, [abi]);
 
     // rename & delete UI state
     const [renameOpen, setRenameOpen] = React.useState(false);
     const [newName, setNewName] = React.useState("");
-    const [toDeleteId, setToDeleteId] = React.useState<string | undefined>(undefined);
+    const [toDeleteId, setToDeleteId] = React.useState<string | undefined>(
+        undefined
+    );
 
     const currentItem = items.find((x) => x.id === currentId);
 
@@ -308,7 +387,9 @@ export function LyquidInstance({ lyquid_id }: any) {
             <Card className="flex flex-col h-full overflow-hidden">
                 <CardHeader>
                     <CardTitle>ABI Functions</CardTitle>
-                    <CardDescription>上方配置基本参数，下方按函数调试发送</CardDescription>
+                    <CardDescription>
+                        上方配置基本参数，下方按函数调试发送
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="h-full overflow-auto space-y-4">
                     {/* Saved ABI selector row */}
@@ -318,7 +399,11 @@ export function LyquidInstance({ lyquid_id }: any) {
                                 <SelectValue placeholder="选择一个已保存的 ABI（或右侧上传）" />
                             </SelectTrigger>
                             <SelectContent>
-                                {items?.length === 0 && <div className="text-xs text-gray-500 text-center py-2">No ABIs</div>}
+                                {items?.length === 0 && (
+                                    <div className="text-xs text-gray-500 text-center py-2">
+                                        No ABIs
+                                    </div>
+                                )}
                                 {items?.map((it) => (
                                     <SelectItem key={it.id} value={it.id}>
                                         {it.name}
@@ -330,7 +415,9 @@ export function LyquidInstance({ lyquid_id }: any) {
                         {/* Actions for current ABI */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon"><MoreVertical className="w-4 h-4" /></Button>
+                                <Button variant="outline" size="icon">
+                                    <MoreVertical className="w-4 h-4" />
+                                </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
                                 <DropdownMenuLabel>当前 ABI</DropdownMenuLabel>
@@ -363,15 +450,33 @@ export function LyquidInstance({ lyquid_id }: any) {
                     <div className="space-y-2">
                         <Accordion type="single" collapsible className="border rounded-lg">
                             <AccordionItem value="advanced">
-                                <AccordionTrigger className="px-3 py-2 text-sm">Advanced</AccordionTrigger>
+                                <AccordionTrigger className="px-3 py-2 text-sm">
+                                    Advanced
+                                </AccordionTrigger>
                                 <AccordionContent className="space-y-2 px-2">
-                                    <Input placeholder="From" value={from} onChange={(e) => setFrom(e.target.value)} />
-                                    <Input placeholder="Value" value={valueEth} onChange={(e) => setValueEth(e.target.value)} />
-                                    <Input placeholder="Gas Limit" value={gas} onChange={(e) => setGas(e.target.value)} />
+                                    <Input
+                                        placeholder="From"
+                                        value={from}
+                                        onChange={(e) => setFrom(e.target.value)}
+                                    />
+                                    <Input
+                                        placeholder="Value"
+                                        value={valueEth}
+                                        onChange={(e) => setValueEth(e.target.value)}
+                                    />
+                                    <Input
+                                        placeholder="Gas Limit"
+                                        value={gas}
+                                        onChange={(e) => setGas(e.target.value)}
+                                    />
                                 </AccordionContent>
                             </AccordionItem>
                         </Accordion>
-                        <Input placeholder="Contract Address" value={contract} onChange={(e) => setContract(e.target.value)} />
+                        <Input
+                            placeholder="Contract Address"
+                            value={contract}
+                            onChange={(e) => setContract(e.target.value)}
+                        />
                         {/* <Input placeholder="Data" value={dataOverride} onChange={(e) => setDataOverride(e.target.value)} /> */}
                     </div>
 
@@ -379,7 +484,8 @@ export function LyquidInstance({ lyquid_id }: any) {
 
                     {!abi && (
                         <div className="text-muted-foreground text-xs">
-                            还没有选择 ABI。请在上方下拉选择，或点击右侧 <span className="font-medium">Upload ABI</span> 导入。
+                            还没有选择 ABI。请在上方下拉选择，或点击右侧{" "}
+                            <span className="font-medium">Upload ABI</span> 导入。
                         </div>
                     )}
 
@@ -392,12 +498,17 @@ export function LyquidInstance({ lyquid_id }: any) {
                                     <AccordionItem key={key} value={key}>
                                         <AccordionTrigger className="flex items-center justify-between px-3 py-2 text-sm">
                                             <div className="flex items-center gap-1">
-                                                <Badge className="text-xs origin-left scale-75 -mr-2">{fn.stateMutability}</Badge>
+                                                <Badge className="text-xs origin-left scale-75 -mr-2">
+                                                    {fn.stateMutability}
+                                                </Badge>
                                                 <span className="font-medium text-sm">{fn.name}</span>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
-                                            <Textarea className="!text-sm max-h-30" value={pretty(fn)} />
+                                            <Textarea
+                                                className="!text-sm max-h-30"
+                                                value={pretty(fn)}
+                                            />
                                             <div className="space-y-2 mt-2">
                                                 {(fn.inputs || []).map((p, idx) => (
                                                     <Input
@@ -407,12 +518,18 @@ export function LyquidInstance({ lyquid_id }: any) {
                                                         onChange={(e) =>
                                                             setFnInputs((prev) => ({
                                                                 ...prev,
-                                                                [key]: { ...(prev[key] || {}), [p.name || `arg${idx}`]: e.target.value },
+                                                                [key]: {
+                                                                    ...(prev[key] || {}),
+                                                                    [p.name || `arg${idx}`]: e.target.value,
+                                                                },
                                                             }))
                                                         }
                                                     />
                                                 ))}
-                                                <Button className="w-full mt-2 py-1 h-fit" onClick={() => sendFn(fn)}>
+                                                <Button
+                                                    className="w-full mt-2 py-1 h-fit"
+                                                    onClick={() => sendFn(fn)}
+                                                >
                                                     Send
                                                 </Button>
                                             </div>
@@ -431,14 +548,14 @@ export function LyquidInstance({ lyquid_id }: any) {
                     <CardTitle>Logs</CardTitle>
                     <CardDescription>请求 / 响应 与调试信息</CardDescription>
                     <CardAction className="flex gap-2">
-                        <Button variant="outline" onClick={clearLog}>Clear Logs</Button>
+                        <Button variant="outline" onClick={clearLog}>
+                            Clear Logs
+                        </Button>
                     </CardAction>
                 </CardHeader>
                 <Separator />
                 <CardContent className="h-full overflow-auto">
-                    <div className="overflow-auto w-full h-full">
-                        {PreLog}
-                    </div>
+                    <div className="overflow-auto w-full h-full">{PreLog}</div>
                 </CardContent>
             </Card>
 
@@ -446,29 +563,58 @@ export function LyquidInstance({ lyquid_id }: any) {
                 <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-hidden">
                     <DialogHeader>
                         <DialogTitle>加载 ABI</DialogTitle>
-                        <DialogDescription>通过文件或粘贴 JSON 导入，并为其命名以便下次选择。</DialogDescription>
+                        <DialogDescription>
+                            通过文件或粘贴 JSON 导入，并为其命名以便下次选择。
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-2">
-                        <Input placeholder="Name (选填，默认使用文件名或时间戳)" value={abiName} onChange={(e) => setAbiName(e.target.value)} />
+                        <Input
+                            placeholder="Name (选填，默认使用文件名或时间戳)"
+                            value={abiName}
+                            onChange={(e) => setAbiName(e.target.value)}
+                        />
                     </div>
 
                     <Tabs defaultValue="file" className="mt-3">
                         <TabsList className="w-full">
-                            <TabsTrigger value="file" className="w-1/2">文件上传</TabsTrigger>
-                            <TabsTrigger value="paste" className="w-1/2">粘贴 JSON</TabsTrigger>
+                            <TabsTrigger value="file" className="w-1/2">
+                                文件上传
+                            </TabsTrigger>
+                            <TabsTrigger value="paste" className="w-1/2">
+                                粘贴 JSON
+                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="file" className="pt-4">
-                            <input id="abi-uploader" ref={fileRef} type="file" accept=".json,application/json" placeholder="Upload" className="hidden text-center border text-sm w-full p-2 rounded-md " onChange={onFileSelected} />
-                            <label htmlFor="abi-uploader" className="relative block border rounded-md w-full px-4 py-10 text-center text-gray-500">
-                                <Upload className="size-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
+                            <input
+                                id="abi-uploader"
+                                ref={fileRef}
+                                type="file"
+                                accept=".json,application/json"
+                                placeholder="Upload"
+                                className="hidden text-center border text-sm w-full p-2 rounded-md "
+                                onChange={onFileSelected}
+                            />
+                            <label
+                                htmlFor="abi-uploader"
+                                className="relative block border rounded-md w-full px-4 py-10 text-center text-gray-500"
+                            >
+                                <Upload className="size-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                             </label>
-                            <div className="text-xs text-muted-foreground mt-2">支持直接导入 <code>*.json</code>，或含有 <code>{`{ abi: [...] }`}</code> 的编译产物。</div>
+                            <div className="text-xs text-muted-foreground mt-2">
+                                支持直接导入 <code>*.json</code>，或含有{" "}
+                                <code>{`{ abi: [...] }`}</code> 的编译产物。
+                            </div>
                         </TabsContent>
 
                         <TabsContent value="paste" className="pt-4 space-y-2">
-                            <Textarea className="!text-xs max-h-[220px] overflow-auto break-all" placeholder="粘贴一段 ABI JSON（可以是数组或包含 abi 字段的对象）" value={abiPasteText} onChange={(e) => setAbiPasteText(e.target.value)} />
+                            <Textarea
+                                className="!text-xs max-h-[220px] overflow-auto break-all"
+                                placeholder="粘贴一段 ABI JSON（可以是数组或包含 abi 字段的对象）"
+                                value={abiPasteText}
+                                onChange={(e) => setAbiPasteText(e.target.value)}
+                            />
                             <div className="flex justify-end">
                                 <Button onClick={onLoadAbiFromPaste}>
                                     <Clipboard className="w-4 h-4 mr-2" /> 保存并载入
@@ -486,7 +632,11 @@ export function LyquidInstance({ lyquid_id }: any) {
                         <DialogTitle>重命名 ABI</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-2">
-                        <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="新的名称" />
+                        <Input
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            placeholder="新的名称"
+                        />
                     </div>
                     <DialogFooter>
                         <Button
@@ -503,14 +653,21 @@ export function LyquidInstance({ lyquid_id }: any) {
             </Dialog>
 
             {/* 删除确认 */}
-            <AlertDialog open={!!toDeleteId} onOpenChange={(open) => !open && setToDeleteId(undefined)}>
+            <AlertDialog
+                open={!!toDeleteId}
+                onOpenChange={(open) => !open && setToDeleteId(undefined)}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>确认删除该 ABI？</AlertDialogTitle>
-                        <AlertDialogDescription>该操作仅删除本地保存的记录，不影响链上或其他文件。</AlertDialogDescription>
+                        <AlertDialogDescription>
+                            该操作仅删除本地保存的记录，不影响链上或其他文件。
+                        </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setToDeleteId(undefined)}>取消</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setToDeleteId(undefined)}>
+                            取消
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-red-600 hover:bg-red-700"
                             onClick={() => {

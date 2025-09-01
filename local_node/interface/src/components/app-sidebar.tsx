@@ -39,6 +39,7 @@ import { useThemeStore } from "@/stores/theme-store";
 import { useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Profile } from "@/components/profile";
+import { BlockCard } from "@/components/block-card";
 
 // This is sample data.
 const data = {
@@ -300,6 +301,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarFooter>
         <SidebarContent>
+          <BlockCard />
+          <Separator />
           <Profile />
           <Separator />
 
