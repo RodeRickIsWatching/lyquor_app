@@ -145,7 +145,7 @@ export const useAbiVault = create<AbiVaultState>()(
 
 // ---------------------------------------------------------------------
 // component
-export function LyquidInstance({lyquid_id}: any) {
+export function LyquidInstance({ lyquid_id }: any) {
     // pull from vault
     const { items, currentId, select, add, remove, rename, getById } = useAbiVault();
 
@@ -174,9 +174,55 @@ export function LyquidInstance({lyquid_id}: any) {
     const [fnInputs, setFnInputs] = React.useState<Record<string, Record<string, string>>>({});
     const [fnParamsJson, setFnParamsJson] = React.useState<Record<string, string>>({});
 
-    // logs
-    const {appendLog, clearLog, PreLog} = usePreLog()
+    const parseIncomingAbi = (json: any) => {
+        const incoming = Array.isArray(json) ? json : json?.abi;
+        if (!incoming || !Array.isArray(incoming)) throw new Error("JSON 不包含 ABI 数组");
+        return incoming as Abi;
+    };
 
+    const onFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const text = String(ev.target?.result || "");
+                const json = JSON.parse(text);
+                const parsed = parseIncomingAbi(json);
+                const name = abiName || file.name.replace(/\.json$/i, "") || `ABI-${Date.now()}`;
+                const id = add(name, parsed);
+                select(id);
+                appendLog(`[info] ABI loaded from file: ${name}`);
+                setOpenUpload(false);
+                setAbiPasteText("");
+                setAbiName("");
+            } catch (err: any) {
+                appendLog("[error] 解析 ABI 失败: " + err.message);
+            } finally {
+                if (fileRef.current) fileRef.current.value = "";
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const onLoadAbiFromPaste = () => {
+        try {
+            const json = JSON.parse(abiPasteText);
+            const parsed = parseIncomingAbi(json);
+            const name = abiName || `ABI-${new Date().toISOString()}`;
+            const id = add(name, parsed);
+            select(id);
+            appendLog(`[info] ABI loaded from pasted JSON: ${name}`);
+            setOpenUpload(false);
+            setAbiPasteText("");
+            setAbiName("");
+        } catch (err: any) {
+            alert("[error] 粘贴的 ABI JSON 无效: " + err.message);
+        }
+    };
+
+    // logs
+    const { appendLog, clearLog, PreLog } = usePreLog()
     const idRef = React.useRef<number>(1);
     // send function (encode only)
     const sendFn = async (fn: AbiFunction) => {
@@ -239,7 +285,7 @@ export function LyquidInstance({lyquid_id}: any) {
             abi,
             functionName: fn.name,
             data: result?.result,
-          });
+        });
 
         appendLog(`<< ${JSON.stringify(result, null, 2)}`);
         appendLog(`<< decode: ${decoded}`)
@@ -346,12 +392,12 @@ export function LyquidInstance({lyquid_id}: any) {
                                     <AccordionItem key={key} value={key}>
                                         <AccordionTrigger className="flex items-center justify-between px-3 py-2 text-sm">
                                             <div className="flex items-center gap-1">
-                                            <Badge className="text-xs origin-left scale-75 -mr-2">{fn.stateMutability}</Badge>
-                                            <span className="font-medium text-sm">{fn.name}</span>
+                                                <Badge className="text-xs origin-left scale-75 -mr-2">{fn.stateMutability}</Badge>
+                                                <span className="font-medium text-sm">{fn.name}</span>
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
-                                            <Textarea className="!text-sm max-h-30" value={pretty(fn)}/>
+                                            <Textarea className="!text-sm max-h-30" value={pretty(fn)} />
                                             <div className="space-y-2 mt-2">
                                                 {(fn.inputs || []).map((p, idx) => (
                                                     <Input
@@ -395,6 +441,43 @@ export function LyquidInstance({lyquid_id}: any) {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={openUpload} onOpenChange={setOpenUpload}>
+                <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-hidden">
+                    <DialogHeader>
+                        <DialogTitle>加载 ABI</DialogTitle>
+                        <DialogDescription>通过文件或粘贴 JSON 导入，并为其命名以便下次选择。</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2">
+                        <Input placeholder="Name (选填，默认使用文件名或时间戳)" value={abiName} onChange={(e) => setAbiName(e.target.value)} />
+                    </div>
+
+                    <Tabs defaultValue="file" className="mt-3">
+                        <TabsList className="w-full">
+                            <TabsTrigger value="file" className="w-1/2">文件上传</TabsTrigger>
+                            <TabsTrigger value="paste" className="w-1/2">粘贴 JSON</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="file" className="pt-4">
+                            <input id="abi-uploader" ref={fileRef} type="file" accept=".json,application/json" placeholder="Upload" className="hidden text-center border text-sm w-full p-2 rounded-md " onChange={onFileSelected} />
+                            <label htmlFor="abi-uploader" className="relative block border rounded-md w-full px-4 py-10 text-center text-gray-500">
+                                <Upload className="size-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"/>
+                            </label>
+                            <div className="text-xs text-muted-foreground mt-2">支持直接导入 <code>*.json</code>，或含有 <code>{`{ abi: [...] }`}</code> 的编译产物。</div>
+                        </TabsContent>
+
+                        <TabsContent value="paste" className="pt-4 space-y-2">
+                            <Textarea className="!text-xs max-h-[220px] overflow-auto break-all" placeholder="粘贴一段 ABI JSON（可以是数组或包含 abi 字段的对象）" value={abiPasteText} onChange={(e) => setAbiPasteText(e.target.value)} />
+                            <div className="flex justify-end">
+                                <Button onClick={onLoadAbiFromPaste}>
+                                    <Clipboard className="w-4 h-4 mr-2" /> 保存并载入
+                                </Button>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                </DialogContent>
+            </Dialog>
 
             {/* 重命名对话框 */}
             <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
