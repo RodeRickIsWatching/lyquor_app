@@ -37,9 +37,9 @@ export default function TerminalView({
     if (!terminal.current) return;
 
     terminal.current.options.theme = {
-      background: theme == 'light' ? "#fff" : "#1e1e1e",
-      foreground: theme == 'light' ? "#1e1e1e" : "#d4d4d4",
-      cursor: theme == 'light' ? "#1e1e1e" : "#ffffff",
+      background: theme == 'light' ? "#fff" : "#18181b",
+      foreground: theme == 'light' ? "#18181b" : "#d4d4d4",
+      cursor: theme == 'light' ? "#18181b" : "#ffffff",
     }
 
   }, [theme])
@@ -81,9 +81,9 @@ export default function TerminalView({
       cursorBlink: true,
       cursorStyle: "bar",
       theme: {
-        background: theme == 'light' ? "#fff" : "#1e1e1e",
-        foreground: theme == 'light' ? "#1e1e1e" : "#d4d4d4",
-        cursor: theme == 'light' ? "#1e1e1e" : "#ffffff",
+        background: theme == 'light' ? "#fff" : "#18181b",
+        foreground: theme == 'light' ? "#18181b" : "#d4d4d4",
+        cursor: theme == 'light' ? "#18181b" : "#ffffff",
       }
     });
     terminal.current = term;

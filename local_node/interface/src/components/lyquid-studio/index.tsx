@@ -155,7 +155,7 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
           <div
             className={cn(
               "relative h-full",
-              theme == "light" ? "bg-white" : "bg-[#1e1e1e]"
+              theme == "light" ? "bg-white" : "bg-[#18181b]"
             )}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}

@@ -21,6 +21,7 @@ import { lyquorTestnetPort, lyquorTestnetHttp } from "@/constants";
 import { useLocalNodeWs } from "@/hooks/use-local-node-ws";
 import { lyquidRpcCommands } from "@/utils/method-factory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { usePreLog } from "@/components/pre-log";
 
 
 function resolveParams(defaultParams: any, ctx: { lyquid_id?: string }) {
@@ -54,18 +55,8 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
         return init;
     });
 
-    const [log, setLog] = React.useState<string>("");
-    const logRef = React.useRef<HTMLDivElement | null>(null);
+    const {appendLog, clearLog, PreLog} = usePreLog()
     const idRef = React.useRef<number>(1);
-
-    const appendLog = React.useCallback((line: string) => {
-        setLog((prev) => prev + (prev ? "\n" : "") + line);
-        requestAnimationFrame(() => {
-            if (logRef.current) {
-                logRef.current.scrollTop = logRef.current.scrollHeight;
-            }
-        });
-    }, []);
 
     const { sendMessage, readyState } = useLocalNodeWs(lyquorTestnetPort, {
         onOpen() {
@@ -205,15 +196,13 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
                     <CardTitle>Logs</CardTitle>
                     <CardDescription>请求 / 响应 与推送消息</CardDescription>
                     <CardAction >
-                        <Button onClick={() => setLog("")}>Clear Logs</Button>
+                        <Button onClick={clearLog}>Clear Logs</Button>
                     </CardAction>
                 </CardHeader>
                 <Separator />
                 <CardContent className="h-full overflow-auto">
                     <div className="overflow-auto w-full h-full">
-                        <pre ref={logRef}>
-                            {log}
-                        </pre>
+                        {PreLog}
                     </div>
                 </CardContent>
             </Card>

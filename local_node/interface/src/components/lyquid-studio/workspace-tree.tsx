@@ -1,18 +1,22 @@
-import { Tree, NodeApi } from "react-arborist";
-import { useMemo } from "react";
+import { Tree, NodeApi, type TreeApi } from "react-arborist";
+import { useMemo, useRef, useState } from "react";
 import type { FileNode } from "@/stores/workspace-store";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import {
     ChevronDown,
+    ChevronRight,
     ChevronUp,
     File,
+    Folder,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 function FileIcon({ n }: { n: FileNode }) {
     if (n.type === "folder") {
         return (
             <div>
-                {n.children && n.children.length ? <ChevronDown className="size-3" /> : <ChevronUp className="size-3" />}
+                {n.children && n.children.length ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
             </div>
         )
     }
@@ -28,23 +32,24 @@ function NodeRenderer({
     style: React.CSSProperties;
     dragHandle?: (el: HTMLDivElement | null) => void;
 }) {
+    const { selectedId } = useWorkspaceStore()
     // 内联重命名：自定义渲染器必须自己渲染输入框（对齐文档）
     if (node.isEditing) {
         return (
-            <div>
+            <div className="h-[22px]">
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
                         const input = e.currentTarget.elements.namedItem(
                             "name"
                         ) as HTMLInputElement | null;
-                        node.submit(input?.value ?? node.data.name);
+                        node.submit(input?.value ?? node?.data.name);
                     }}
                 >
                     <input
                         name="name"
                         autoFocus
-                        defaultValue={node.data.name}
+                        defaultValue={node?.data?.name}
                         onBlur={() => node.reset()}
                         style={{ width: "90%" }}
                     />
@@ -55,11 +60,12 @@ function NodeRenderer({
 
     return (
         <div
+            className={cn("hover:dark:bg-white/5 hover:bg-black/5 h-[22px]", selectedId == node.id ? "!bg-black/10 dark:!bg-white/10" : "")}
             style={{ ...style, display: "flex", alignItems: "center", gap: 6 }}
             ref={dragHandle}
             onClick={(e) => {
                 node.handleClick(e);
-                if(node.isInternal){
+                if (node.isInternal) {
                     node.toggle()
                 }
             }}
@@ -82,23 +88,35 @@ function NodeRenderer({
 
 
 
-const handleActivate = (n: NodeApi<FileNode>)=>{
-    if (n.data.type === "file") {
-        useWorkspaceStore.getState().selectFile(n.data);
-    }
+const handleActivate = (n: NodeApi<FileNode>) => {
+    // if (n.data.type === "file") {
+    useWorkspaceStore.getState().selectFile(n?.data);
+    // }
 }
 
 export default function WorkspaceTree() {
+    // const [tempSelect, setTempSelect] = useState()
+    const rootRef = useRef<any | undefined>(undefined)
+    const tempSelected = useRef<any>(undefined)
     const { tree, onCreate, onMove, onRename, onDelete } =
         useWorkspaceStore();
 
-    // 让 Tree 尺寸响应父容器
     const dims = useMemo(() => ({ width: "100%" as const, height: 600 }), []);
 
-    console.log('tree', tree)
+    const handleCreateFile = () => {
+        rootRef.current.createLeaf()
+    }
+    const handleCreateFoler = () => {
+        rootRef.current.createInternal()
+    }
     return (
-        <div className="px-2 text-sm">
+        <div className="px-2 text-sm relative group">
+            <div className="opacity-0 group-hover:opacity-100 z-1 absolute top-2 right-2 flex items-center">
+                <Button onClick={handleCreateFile} className="w-fit h-fit !p-1 text-gray-500" variant="ghost"><File className="size-3" /></Button>
+                <Button onClick={handleCreateFoler} className="w-fit h-fit !p-1 text-gray-500" variant="ghost"><Folder className="size-3" /></Button>
+            </div>
             <Tree<FileNode>
+                ref={rootRef}
                 padding={8}
                 data={tree}
                 width={dims.width}
@@ -109,7 +127,12 @@ export default function WorkspaceTree() {
                 onMove={onMove}
                 onRename={onRename}
                 onDelete={onDelete}
-                onActivate={handleActivate}
+                onSelect={(ns) => {
+                    const n = ns?.[0]
+                    handleActivate(n);
+                    tempSelected.current = n;
+                }}
+            // onActivate={(n)=>{handleActivate(n); tempSelected.current = n;}}
             // disableDrop={({ parentNode }) =>
             //   parentNode ? parentNode.isLeaf : false
             // }

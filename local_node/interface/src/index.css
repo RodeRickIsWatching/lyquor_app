@@ -50,6 +50,11 @@
   --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
+.dark .monaco-editor{
+  --vscode-editor-background: #18181b;
+  --vscode-editorGutter-background: #18181b;
+}
+
 body {
   margin: 0;
   display: flex;
@@ -144,7 +149,7 @@ body {
     @apply bg-background text-foreground;
   }
   pre{
-    @apply size-full border rounded-md text-xs font-mono whitespace-pre-wrap p-3 dark:bg-gray-400/10 bg-black text-green-400;
+    @apply wrap-break-word size-full border rounded-md text-xs font-mono whitespace-pre-wrap p-3 dark:bg-gray-400/10 bg-black text-green-400;
   }
   .main-height{
     @apply h-[calc(100vh-64px-40px-36px-24px)]

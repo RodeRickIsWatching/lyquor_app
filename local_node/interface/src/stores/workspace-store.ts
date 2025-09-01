@@ -176,8 +176,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const id = genId()
     const newNode: FileNode =
       type === "internal"
-        ? { id, name: "新建文件夹", type: "folder", children: [] }
-        : { id, name: "新建文件.ts", type: "file", content: "" }
+        ? { id, name: "", type: "folder", children: [] }
+        : { id, name: "", type: "file", content: "" }
 
     set((s) => ({
       tree: insertUnder(s.tree, parentId, [newNode], index),

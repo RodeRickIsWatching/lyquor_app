@@ -3,6 +3,7 @@ import { RpcCommand } from "@/components/rpc-command";
 import { LyquidStudio } from "@/components/lyquid-studio";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams, useSearchParams, useNavigate } from "react-router";
+import { LyquidInstance } from "@/components/lyquid-instance";
 
 export const SpecificLyquidPage = () => {
   const { lyquid_id } = useParams();
@@ -28,6 +29,7 @@ export const SpecificLyquidPage = () => {
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="playground">Playground</TabsTrigger>
         <TabsTrigger value="studio">Studio</TabsTrigger>
+        <TabsTrigger value="instance">Instance</TabsTrigger>
       </TabsList>
 
       <TabsContent className="[&>div]:h-full" value="overview">
@@ -38,6 +40,9 @@ export const SpecificLyquidPage = () => {
       </TabsContent>
       <TabsContent className="[&>div]:h-full" value="studio">
         <LyquidStudio lyquid_id={lyquid_id} />
+      </TabsContent>
+      <TabsContent className="[&>div]:h-full" value="instance">
+        <LyquidInstance lyquid_id={lyquid_id} />
       </TabsContent>
     </Tabs>
   );
