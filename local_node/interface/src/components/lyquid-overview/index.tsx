@@ -1,4 +1,4 @@
-import { defaultPort } from "@/constants"
+import { lyquorTestnetPort } from "@/constants"
 import { useLocalNodeMetaStore, type LyquidItemMeta } from "@/hooks/use-local-node-meta"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -25,7 +25,7 @@ export const ChainId = ({ chainId }: { chainId: number }) => {
 export function LyquidOverview({ lyquid_id }: { lyquid_id?: string }) {
     const { nodesByPort } = useLocalNodeMetaStore()
     const { blockNumber, gasPrice, lastUpdated } = useBlockStore()
-    const nodeMeta = lyquid_id ? (nodesByPort?.[defaultPort]?.patch?.[lyquid_id] || {}) : {}
+    const nodeMeta = lyquid_id ? (nodesByPort?.[lyquorTestnetPort]?.patch?.[lyquid_id] || {}) : {}
 
     const {
         lyquor_getLatestLyquidInfo = {},

@@ -25,8 +25,8 @@ export const useBlockStore = create<BlockState>((set) => ({
 const pollingInterval = 2_000
 
 // ✅ Hook: 自动更新 block & gasPrice
-export const useBlockUpdater = (defaultPort: string) => {
-    const { callRpc } = useLocalNodeWs(defaultPort);
+export const useBlockUpdater = (lyquorTestnetPort: string) => {
+    const { callRpc } = useLocalNodeWs(lyquorTestnetPort);
     const { setBlock, lastUpdated } = useBlockStore();
 
     // 心跳：每 5s 检查是否需要主动获取

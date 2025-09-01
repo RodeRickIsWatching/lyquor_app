@@ -1,12 +1,12 @@
 import { LyquidSummaryCard } from "@/components/lyquid-summary-card";
-import { defaultPort } from "@/constants";
+import { lyquorTestnetPort } from "@/constants";
 import { useLocalNodeMetaStore } from "@/hooks/use-local-node-meta";
 import { Outlet, useParams } from "react-router";
 
 export function LyquidPage() {
     const { lyquid_id } = useParams()
     const { nodesByPort } = useLocalNodeMetaStore()
-    const meta = nodesByPort?.[defaultPort]
+    const meta = nodesByPort?.[lyquorTestnetPort]
 
     if(lyquid_id){
         return <Outlet />

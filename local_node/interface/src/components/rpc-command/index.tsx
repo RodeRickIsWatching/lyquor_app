@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import React, { } from "react";
 import { Circle } from "lucide-react"; // 状态小圆点
-import { defaultPort, lyquorTestnetHttp } from "@/constants";
+import { lyquorTestnetPort, lyquorTestnetHttp } from "@/constants";
 import { useLocalNodeWs } from "@/hooks/use-local-node-ws";
 import { lyquidRpcCommands } from "@/utils/method-factory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -67,7 +67,7 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
         });
     }, []);
 
-    const { sendMessage, readyState } = useLocalNodeWs(defaultPort, {
+    const { sendMessage, readyState } = useLocalNodeWs(lyquorTestnetPort, {
         onOpen() {
             appendLog("[info] Connected to Lyquor WS API");
             setConnected(true);
@@ -129,7 +129,7 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
 
 
     return (
-        <div className="text-sm overflow-hidden h-[calc(100vh-64px)] grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4">
+        <div className="text-sm overflow-hidden grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4">
             {/* 左侧 */}
             <Card className="flex flex-col h-full overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between">

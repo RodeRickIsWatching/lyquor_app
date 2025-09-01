@@ -7,6 +7,7 @@ import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { SearchAddon } from "@xterm/addon-search";
 import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { useThemeStore } from "@/stores/theme-store";
 // import { AttachAddon } from '@xterm/addon-attach';
 
 
@@ -25,10 +26,23 @@ export default function TerminalView({
   active = false,
   promptText = "$ ",
 }: Props) {
+  const { theme } = useThemeStore()
   const wsRef = useRef<WebSocket | null>(ws);
   const termRef = useRef<HTMLDivElement | null>(null);
   const terminal = useRef<Terminal | null>(null);
   const fitAddon = useRef<FitAddon | null>(null);
+
+
+  useEffect(() => {
+    if (!terminal.current) return;
+
+    terminal.current.options.theme = {
+      background: theme == 'light' ? "#fff" : "#1e1e1e",
+      foreground: theme == 'light' ? "#1e1e1e" : "#d4d4d4",
+      cursor: theme == 'light' ? "#1e1e1e" : "#ffffff",
+    }
+
+  }, [theme])
 
   // 输入缓冲 & 历史
   const inputBuffer = useRef<string>(""); // 当前输入行
@@ -67,12 +81,13 @@ export default function TerminalView({
       cursorBlink: true,
       cursorStyle: "bar",
       theme: {
-        background: "#1e1e1e",
-        foreground: "#d4d4d4",
-        cursor: "#ffffff",
-      },
+        background: theme == 'light' ? "#fff" : "#1e1e1e",
+        foreground: theme == 'light' ? "#1e1e1e" : "#d4d4d4",
+        cursor: theme == 'light' ? "#1e1e1e" : "#ffffff",
+      }
     });
     terminal.current = term;
+    console.log('terminal.current', terminal.current)
 
     const fit = new FitAddon();
     fitAddon.current = fit;

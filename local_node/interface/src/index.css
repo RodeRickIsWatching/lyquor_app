@@ -146,4 +146,7 @@ body {
   pre{
     @apply size-full border rounded-md text-xs font-mono whitespace-pre-wrap p-3 dark:bg-gray-400/10 bg-black text-green-400;
   }
+  .main-height{
+    @apply h-[calc(100vh-64px-40px-36px-24px)]
+  }
 }

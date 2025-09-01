@@ -7,8 +7,9 @@ import { useNavigate, useParams } from "react-router"
 import TerminalView from "@/components/terminal-view";
 import { Loader } from "lucide-react";
 import { sleep } from "@/utils";
+import { terminalTestnetWs } from "@/constants";
 
-const localWs = new WebSocket('ws://localhost:9527/ws')
+const localWs = new WebSocket(terminalTestnetWs)
 
 export const PlaygroundPage = () => {
   const navigate = useNavigate()

@@ -34,10 +34,9 @@ import {
 import { usePlaygroundTree } from "@/stores/playground-tree-store";
 import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { defaultPort } from "@/constants";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLocalStorageState } from "ahooks";
+import { useThemeStore } from "@/stores/theme-store";
+import { useEffect } from "react";
 
 // This is sample data.
 const data = {
@@ -54,7 +53,7 @@ const data = {
     },
   ],
   tree: ["Lyquid"],
-  // tree: ["Lyquid", [`Port/${defaultPort}`]],
+  // tree: ["Lyquid", [`Port/${lyquorTestnetPort}`]],
 };
 
 // 树节点类型定义，避免 any
@@ -232,27 +231,13 @@ const PlaygroundMenu = React.memo(() => {
 PlaygroundMenu.displayName = "PlaygroundMenu";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // @ts-ignore
-  const [theme, setTheme] = useLocalStorageState<any>("local-theme", { defaultValue: 'light', listenStorageChange: true });
-  React.useEffect(() => {
-    handleChange(theme, true)
-  }, [])
+  const { theme, toggleTheme, setTheme } = useThemeStore();
 
-  const handleChange = (v: string, stable: boolean = false) => {
-    const newTheme = stable ? v : (theme === v)
-      ? (v === 'light' ? 'dark' : 'light')
-      : v;
+   // 首次挂载时，应用 theme
+   useEffect(() => {
+    setTheme(theme);
+  }, []);
 
-    const root: any = document.querySelector('#root');
-    if (!root) return;
-
-    setTheme(newTheme);
-    root.dataset.theme = newTheme;
-
-    const opposite = newTheme === 'light' ? 'dark' : 'light';
-    root.classList.remove(opposite);
-    root.classList.add(newTheme);
-  };
 
 
   return (
@@ -313,8 +298,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarContent>
           <Tabs value={theme} className="w-full">
             <TabsList className="w-full">
-              <TabsTrigger onClick={() => { handleChange('light') }} value="light"><Sun /></TabsTrigger>
-              <TabsTrigger onClick={() => { handleChange('dark') }} value="dark"><Moon /></TabsTrigger>
+              <TabsTrigger onClick={() => { toggleTheme('light') }} value="light"><Sun /></TabsTrigger>
+              <TabsTrigger onClick={() => { toggleTheme('dark') }} value="dark"><Moon /></TabsTrigger>
             </TabsList>
           </Tabs>
         </SidebarContent>
