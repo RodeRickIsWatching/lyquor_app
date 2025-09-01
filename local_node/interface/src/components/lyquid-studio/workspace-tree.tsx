@@ -101,6 +101,7 @@ export default function WorkspaceTree() {
     const { tree, onCreate, onMove, onRename, onDelete } =
         useWorkspaceStore();
 
+        console.log('tree', tree)
     const dims = useMemo(() => ({ width: "100%" as const, height: 600 }), []);
 
     const handleCreateFile = () => {

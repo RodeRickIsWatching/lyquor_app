@@ -1,3 +1,4 @@
+import { erc20_cargo, erc20_rs } from "@/constants/template-rs"
 import { create } from "zustand"
 
 export type FileNode = {
@@ -145,14 +146,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       name: "src",
       type: "folder",
       children: [
-        { id: "2", name: "lib.rs", type: "file", content: "// rust contract demo\nfn main() {}" },
+        { id: "2", name: "lib.rs", type: "file", content: erc20_rs },
       ],
     },
     {
         "id": "3",
         "name": "Cargo.toml",
         "type": "file",
-        "content": "[package]\nname = \"hello\"\nversion = \"0.0.1\"\nedition = \"2024\"\n\n# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html\n\n[dependencies]\nlyquid = { path = \"../../lyquid/\", features = [\"ldk\"] }\n\n[lib]\ncrate-type = [\"cdylib\", \"rlib\"]\n\n[profile.release]\nstrip = \"debuginfo\"\ndebug = false\n\n[workspace]\n"
+        "content": erc20_cargo
     }
   ],
   selectedId: undefined,
