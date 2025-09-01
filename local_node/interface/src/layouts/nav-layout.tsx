@@ -19,6 +19,7 @@ import { Separator } from "@/components/ui/separator";
 import { lyquorTestnetPort } from "@/constants";
 import { useLocalNodeMeta } from "@/hooks/use-local-node-meta";
 import { useBlockUpdater } from "@/hooks/use-block-updater";
+import { WalletProvider } from "@/layouts/provider/wallet-provider";
 
 export default function NavLayout() {
   const matches = useMatches();
@@ -26,40 +27,42 @@ export default function NavLayout() {
   useBlockUpdater(lyquorTestnetPort);
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="dark:text-white text-black flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              {matches?.map((item, index) => {
-                return (
-                  <>
-                    {index != 0 ? (
-                      <BreadcrumbSeparator className="hidden md:block" />
-                    ) : null}
-                    <BreadcrumbItem className="hidden md:block" key={index}>
-                      <BreadcrumbLink href={item.pathname}>
-                        {index > 0
-                          ? item.pathname
+    <WalletProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <header className="dark:text-white text-black flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <Breadcrumb>
+              <BreadcrumbList>
+                {matches?.map((item, index) => {
+                  return (
+                    <>
+                      {index != 0 ? (
+                        <BreadcrumbSeparator className="hidden md:block" />
+                      ) : null}
+                      <BreadcrumbItem className="hidden md:block" key={index}>
+                        <BreadcrumbLink href={item.pathname}>
+                          {index > 0
+                            ? item.pathname
                               .replace(matches?.[index - 1]?.pathname, "")
                               .replace("/", "")
-                          : "Root"}
-                      </BreadcrumbLink>
-                    </BreadcrumbItem>
-                  </>
-                );
-              })}
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-        <Outlet />
-      </SidebarInset>
-    </SidebarProvider>
+                            : "Root"}
+                        </BreadcrumbLink>
+                      </BreadcrumbItem>
+                    </>
+                  );
+                })}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          <Outlet />
+        </SidebarInset>
+      </SidebarProvider>
+    </WalletProvider>
   );
 }

@@ -37,6 +37,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useThemeStore } from "@/stores/theme-store";
 import { useEffect } from "react";
+import { Separator } from "@/components/ui/separator";
+import { Profile } from "@/components/profile";
 
 // This is sample data.
 const data = {
@@ -233,8 +235,8 @@ PlaygroundMenu.displayName = "PlaygroundMenu";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { theme, toggleTheme, setTheme } = useThemeStore();
 
-   // 首次挂载时，应用 theme
-   useEffect(() => {
+  // 首次挂载时，应用 theme
+  useEffect(() => {
     setTheme(theme);
   }, []);
 
@@ -294,8 +296,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
+
+
       <SidebarFooter>
         <SidebarContent>
+          <Profile />
+          <Separator />
+
           <Tabs value={theme} className="w-full">
             <TabsList className="w-full">
               <TabsTrigger onClick={() => { toggleTheme('light') }} value="light"><Sun /></TabsTrigger>
