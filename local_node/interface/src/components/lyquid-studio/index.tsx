@@ -95,15 +95,25 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
     execToTerminal("clear", true);
   }, []);
 
-  useEffect(()=>{
-    editorWs.onopen = ()=>{
+  useEffect(() => {
+    editorWs.onopen = () => {
       editorWs.send(JSON.stringify({
         id: "editor-1", // 请求 id，用来对应回调
         type: "tree:get",
         data: { namespace: "app-1" },
       }))
     }
-   
+
+    editorWs.onmessage = (msg) => {
+      const data = JSON.parse(msg.data)
+      switch (data.type) {
+        case "tree:get:ok": {
+          const tree = data?.data?.tree;
+          useWorkspaceStore.getState().initTree(tree)
+          return
+        }
+      }
+    }
   }, [])
   return (
     <Card className="flex flex-col overflow-hidden pb-0 gap-0">

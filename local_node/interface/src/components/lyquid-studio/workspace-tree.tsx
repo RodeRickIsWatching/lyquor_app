@@ -1,22 +1,21 @@
-import { Tree, NodeApi, type TreeApi } from "react-arborist";
-import { useMemo, useRef, useState } from "react";
+import { Tree, NodeApi } from "react-arborist";
+import { useMemo, useRef } from "react";
 import type { FileNode } from "@/stores/workspace-store";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 import {
     ChevronDown,
     ChevronRight,
-    ChevronUp,
     File,
     Folder,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-function FileIcon({ n }: { n: FileNode }) {
+function FileIcon({ node, n }: { node: NodeApi<FileNode>, n: FileNode }) {
     if (n.type === "folder") {
         return (
             <div>
-                {n.children && n.children.length ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+                {node.isOpen ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
             </div>
         )
     }
@@ -71,7 +70,7 @@ function NodeRenderer({
             }}
             title={node.data.name}
         >
-            <FileIcon n={node.data} />
+            <FileIcon node={node} n={node.data} />
             <span
                 style={{
                     userSelect: "none",
@@ -117,6 +116,7 @@ export default function WorkspaceTree() {
                 <Button onClick={handleCreateFoler} className="w-fit h-fit !p-1 text-gray-500" variant="ghost"><Folder className="size-3" /></Button>
             </div>
             <Tree<FileNode>
+                openByDefault={false}
                 ref={rootRef}
                 padding={8}
                 data={tree}

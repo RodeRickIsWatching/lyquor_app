@@ -34,6 +34,8 @@ type WorkspaceState = {
   tree: FileNode[]
   selectedId?: string
   selectedFile?: FileNode
+
+  initTree: (tree: FileNode[]) => void
   selectFile: (file: FileNode | undefined) => void
   updateFileContent: (id: string, content: string) => void
 
@@ -140,25 +142,13 @@ function isDescendant(targetParentId: string, candidateId: string, nodes: FileNo
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   // 初始数据
-  tree: [
-    {
-      id: "1",
-      name: "src",
-      type: "folder",
-      children: [
-        { id: "2", name: "lib.rs", type: "file", content: erc20_rs },
-      ],
-    },
-    {
-        "id": "3",
-        "name": "Cargo.toml",
-        "type": "file",
-        "content": erc20_cargo
-    }
-  ],
+  tree: [],
   selectedId: undefined,
   selectedFile: undefined,
 
+  initTree: (tree: FileNode[])=>{
+    set({ tree })
+  },
   selectFile: (file?: FileNode) => {
     console.log('selectFile')
     set({ selectedFile: file, selectedId: file?.id })
