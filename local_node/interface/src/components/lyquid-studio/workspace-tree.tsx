@@ -95,6 +95,7 @@ export default function WorkspaceTree() {
     // 让 Tree 尺寸响应父容器
     const dims = useMemo(() => ({ width: "100%" as const, height: 600 }), []);
 
+    console.log('tree', tree)
     return (
         <div className="px-2 text-sm">
             <Tree<FileNode>
