@@ -4,7 +4,6 @@ import * as path from "path";
 import type { LyquorEvent } from "../../interface";
 import { scanDirectory } from "../../utils/scanDirectory.ts";
 import { fileURLToPath } from "url";
-import { path7za } from "7zip-bin";
 import pkg from "node-7z";
 const { extractFull } = pkg;
 
@@ -83,17 +82,12 @@ async function isDirEmpty(dir: string): Promise<boolean> {
   }
 }
 
-export async function extractTemplate7z(targetDir: string) {
-  const archivePath = TEMPLATE_ZIP;
 
+async function extractTemplate7z(zipPath: string, destPath: string) {
   return new Promise<void>((resolve, reject) => {
-    const stream = extractFull(archivePath, targetDir, {
-      $bin: path7za,
-      $progress: true,
-    });
-
+    const stream = extractFull(zipPath, destPath, { $bin: "7z" }); // 用系统的 7z
     stream.on("end", () => resolve());
-    stream.on("error", (err) => reject(err));
+    stream.on("error", (err: Error) => reject(err));
   });
 }
 
@@ -107,7 +101,7 @@ export const editorDispatcherMap: EditorDispatcherMap = {
       // 如果 workspace 不存在，先拷贝模板
       if (await isDirEmpty(workspaceDir)) {
         await fs.mkdir(workspaceDir, { recursive: true });
-        await extractTemplate7z(workspaceDir);
+        await extractTemplate7z(TEMPLATE_ZIP, workspaceDir);
       }
 
       // 扫描 workspace
