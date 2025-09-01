@@ -210,11 +210,8 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
                 </CardHeader>
                 <Separator />
                 <CardContent className="h-full overflow-auto">
-                    <div className="overflow-auto w-full h-full border rounded-md p-3 bg-black text-green-400 shadow-inner shadow-green-900/50">
-                        <pre
-                            ref={logRef}
-                            className="text-[12px] leading-relaxed font-mono whitespace-pre-wrap"
-                        >
+                    <div className="overflow-auto w-full h-full">
+                        <pre ref={logRef}>
                             {log}
                         </pre>
                     </div>

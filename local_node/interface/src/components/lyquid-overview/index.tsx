@@ -84,10 +84,8 @@ export function LyquidOverview({ lyquid_id }: { lyquid_id?: string }) {
                         <CardTitle className="text-sm">Console</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="overflow-auto w-full h-full border rounded-md p-3 bg-black text-green-400 shadow-inner shadow-green-900/50">
-                            <pre
-                                className="text-[12px] leading-relaxed font-mono whitespace-pre-wrap"
-                            >
+                        <div className="overflow-auto w-full h-full">
+                            <pre>
                                 {JSON.stringify(lyquor_readConsole, null, 2)}
                             </pre>
                         </div>

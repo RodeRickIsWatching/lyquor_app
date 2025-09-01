@@ -32,7 +32,7 @@ export function LyquidCard({ data }: { data: LyquidItemMeta }) {
         {data.console?.text?.trim() && (
           <div>
             <p className="text-sm text-gray-500">Console</p>
-            <pre className="bg-gray-100 rounded-md p-2 text-xs font-mono whitespace-pre-wrap">
+            <pre>
               {data.console.text}
             </pre>
           </div>
