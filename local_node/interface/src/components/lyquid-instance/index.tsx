@@ -448,7 +448,7 @@ export function LyquidInstance({ lyquid_id }: any) {
 
                     {/* 上半区：表单输入（Advanced 可折叠） */}
                     <div className="space-y-2">
-                        <Accordion type="single" collapsible className="border rounded-lg">
+                        {/* <Accordion type="single" collapsible className="border rounded-lg">
                             <AccordionItem value="advanced">
                                 <AccordionTrigger className="px-3 py-2 text-sm">
                                     Advanced
@@ -471,7 +471,7 @@ export function LyquidInstance({ lyquid_id }: any) {
                                     />
                                 </AccordionContent>
                             </AccordionItem>
-                        </Accordion>
+                        </Accordion> */}
                         <Input
                             placeholder="Contract Address"
                             value={contract}
