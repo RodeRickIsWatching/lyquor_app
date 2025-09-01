@@ -1,5 +1,26 @@
-import { erc20_cargo, erc20_rs } from "@/constants/template-rs"
+import { editorTestnetWs } from "@/constants"
 import { create } from "zustand"
+
+const editorWs = new WebSocket(editorTestnetWs)
+
+editorWs.onopen = () => {
+  editorWs.send(JSON.stringify({
+    id: "editor-1", // 请求 id，用来对应回调
+    type: "tree:get",
+    data: { namespace: useWorkspaceStore.getState().activeNameSpace },
+  }))
+}
+
+editorWs.onmessage = (msg) => {
+  const data = JSON.parse(msg.data)
+  switch (data.type) {
+    case "tree:get:ok": {
+      const tree = data?.data?.tree;
+      useWorkspaceStore.getState().initTree(tree)
+      return
+    }
+  }
+}
 
 export type FileNode = {
   id: string
@@ -31,10 +52,13 @@ type DeleteArgs = {
 }
 
 type WorkspaceState = {
+  activeNameSpace: string
+  idMap: Record<string, number>
   tree: FileNode[]
   selectedId?: string
   selectedFile?: FileNode
 
+  send: any
   initTree: (tree: FileNode[]) => void
   selectFile: (file: FileNode | undefined) => void
   updateFileContent: (id: string, content: string) => void
@@ -142,26 +166,46 @@ function isDescendant(targetParentId: string, candidateId: string, nodes: FileNo
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   // 初始数据
+  activeNameSpace: 'app-1',
+  idMap: {},
   tree: [],
   selectedId: undefined,
   selectedFile: undefined,
 
-  initTree: (tree: FileNode[])=>{
+  // TODO: add immer
+  generateId: () => { },
+  initTree: (tree: FileNode[]) => {
     set({ tree })
   },
+
+
+  send: (msg) => {
+    // 这里可以考虑加 activeWorkspace/namespace
+    const ns = get().selectedId ? get().selectedId : "default"
+    editorWs.send(JSON.stringify({
+      namespace: ns,
+      ...msg,
+    }))
+  },
+
   selectFile: (file?: FileNode) => {
     console.log('selectFile')
     set({ selectedFile: file, selectedId: file?.id })
   },
 
   updateFileContent: (id, content) => {
-    console.log('updateFileContent')
+    console.log('updateFileContent', id, content)
     set((s) => ({
-        tree: updateContent(s.tree, id, content),
-      }))
+      tree: updateContent(s.tree, id, content),
+    }))
+
+    // const ns = get().activeNameSpace!
+    // get().send({
+    //   type: "file:write",
+    //   data: { namespace: ns, path, content },
+    // })
   },
 
-  // —— 与 Arborist 四个事件对齐 —— //
   onCreate: ({ parentId, index, type }) => {
     console.log('onCreate')
     const id = genId()
@@ -173,6 +217,18 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((s) => ({
       tree: insertUnder(s.tree, parentId, [newNode], index),
     }))
+
+
+    const ns = get().activeNameSpace!
+    const path = computePathFromParent(parentId, index, newNode.name)
+
+    get().send(
+      type === "internal"
+        ? { type: "folder:create", data: { namespace: ns, path } }
+        : { type: "file:create", data: { namespace: ns, path, content: "" } }
+    )
+
+
 
     // 返回新 id 供 Arborist 聚焦并进入编辑态（文档要求）
     return { id }
@@ -190,21 +246,49 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const newTree = insertUnder(removedTree, parentId, removed, index)
       return { tree: newTree }
     })
+
+    const ns = get().activeNameSpace!
+    get().send({
+      type: "tree:move",
+      data: { namespace: ns, dragIds, parentId, index },
+    })
   },
 
   onRename: ({ id, name }) => {
     console.log('onRename')
     set((s) => ({
-        tree: renameNode(s.tree, id, name),
-      }))
+      tree: renameNode(s.tree, id, name),
+    }))
+
+
+    const ns = get().activeNameSpace!
+    const oldPath = id
+    const newPath = computeRenamedPath(id, name)
+    const nodeType = findNodeType(id)
+
+    get().send(
+      nodeType === "folder"
+        ? { type: "folder:rename", data: { namespace: ns, oldPath, newPath } }
+        : { type: "file:rename", data: { namespace: ns, oldPath, newPath } }
+    )
   },
 
   onDelete: ({ ids }) => {
     console.log('onDelete')
     set((s) => {
-        const { tree } = removeByIds(s.tree, new Set(ids))
-        const sel = s.selectedId && ids.includes(s.selectedId) ? undefined : s.selectedId
-        return { tree, selectedId: sel }
-      })
+      const { tree } = removeByIds(s.tree, new Set(ids))
+      const sel = s.selectedId && ids.includes(s.selectedId) ? undefined : s.selectedId
+      return { tree, selectedId: sel }
+    })
+
+    const ns = get().activeNameSpace!
+    ids.forEach(id => {
+      const nodeType = findNodeType(id)
+      get().send(
+        nodeType === "folder"
+          ? { type: "folder:delete", data: { namespace: ns, path: id } }
+          : { type: "file:delete", data: { namespace: ns, path: id } }
+      )
+    })
   },
 }))

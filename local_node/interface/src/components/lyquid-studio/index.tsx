@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -6,7 +6,7 @@ import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Dock, Trash2, Save, Play, Rocket } from "lucide-react";
 import TerminalView from "@/components/terminal-view";
 import { useThemeStore } from "@/stores/theme-store";
-import { editorTestnetWs, terminalTestnetWs } from "@/constants";
+import { terminalTestnetWs } from "@/constants";
 import { cn } from "@/lib/utils";
 import WorkspaceEditor from "@/components/lyquid-studio/workspace-editor";
 import WorkspaceTree from "@/components/lyquid-studio/workspace-tree";
@@ -15,7 +15,6 @@ import { useWorkspaceStore } from "@/stores/workspace-store";
 const terminalWs = new WebSocket(terminalTestnetWs);
 type Layout = "bottom" | "right";
 const TERM_ID = "lyquid-studio-term";
-const editorWs = new WebSocket(editorTestnetWs)
 
 // ---- 发命令到终端 ----
 function execToTerminal(cmd: string, submit = true) {
@@ -95,26 +94,6 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
     execToTerminal("clear", true);
   }, []);
 
-  useEffect(() => {
-    editorWs.onopen = () => {
-      editorWs.send(JSON.stringify({
-        id: "editor-1", // 请求 id，用来对应回调
-        type: "tree:get",
-        data: { namespace: "app-1" },
-      }))
-    }
-
-    editorWs.onmessage = (msg) => {
-      const data = JSON.parse(msg.data)
-      switch (data.type) {
-        case "tree:get:ok": {
-          const tree = data?.data?.tree;
-          useWorkspaceStore.getState().initTree(tree)
-          return
-        }
-      }
-    }
-  }, [])
   return (
     <Card className="flex flex-col overflow-hidden pb-0 gap-0">
       <CardHeader className="flex flex-row justify-between items-center pb-6">

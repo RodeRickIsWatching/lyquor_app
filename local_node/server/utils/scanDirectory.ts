@@ -35,6 +35,7 @@ export function scanDirectory(
         id: relativePath,
         name: entry.name,
         type: "file",
+        content: fs.readFileSync(fullPath, "utf-8")
       };
     }
   });

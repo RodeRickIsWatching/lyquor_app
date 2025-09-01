@@ -4,6 +4,31 @@ import { useThemeStore } from "@/stores/theme-store";
 import type { FileNode } from "@/stores/workspace-store";
 import { useWorkspaceStore } from "@/stores/workspace-store";
 
+const extensionToLanguage: Record<string, string> = {
+  js: "javascript",
+  ts: "typescript",
+  json: "json",
+  md: "markdown",
+  html: "html",
+  css: "css",
+  scss: "scss",
+  py: "python",
+  java: "java",
+  cpp: "cpp",
+  c: "c",
+  rs: "rust",
+  go: "go",
+  sh: "shell",
+  yml: "yaml",
+  yaml: "yaml",
+  toml: "ini",
+};
+
+function getLanguageByFilename(filename: string): string {
+  const ext = filename.split(".").pop() || "";
+  return extensionToLanguage[ext] || "plaintext";
+}
+
 function findById(
   nodes: FileNode[],
   id: string | undefined
@@ -47,25 +72,11 @@ export default function WorkspaceEditor() {
     );
   }
 
-  const language = file.name.endsWith(".toml")
-    ? "ini"
-    : file.name.endsWith(".rs")
-    ? "rust"
-    : file.name.endsWith(".ts") || file.name.endsWith(".tsx")
-    ? "typescript"
-    : file.name.endsWith(".js") || file.name.endsWith(".jsx")
-    ? "javascript"
-    : file.name.endsWith(".json")
-    ? "json"
-    : file.name.endsWith(".css")
-    ? "css"
-    : "plaintext";
-
   return (
     <Editor
       height="100%"
       path={file.name}
-      language={language}
+      language={getLanguageByFilename(file.name)}
       value={file.content ?? ""}
       onChange={(v) => update(file.id, v ?? "")}
       options={{ fontSize: 12, minimap: { enabled: false } }}
