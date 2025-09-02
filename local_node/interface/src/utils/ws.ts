@@ -1,6 +1,5 @@
 import { lyquorTestnetWs } from "@/constants";
 
-// ws/localNodeWs.ts
 type EventType = "open" | "message" | "error" | "close";
 
 class NodeWsInstance {
@@ -12,12 +11,10 @@ class NodeWsInstance {
     close: new Set(),
   };
 
-  // 状态快照：用于新监听器的立即回放
   private lastOpen: Event | null = null;
   private lastClose: CloseEvent | null = null;
   private lastError: Event | null = null;
 
-  // 给 useSyncExternalStore 用的状态订阅器
   private stateSubscribers = new Set<() => void>();
 
   constructor(port: string | number) {
@@ -46,14 +43,12 @@ class NodeWsInstance {
     };
   }
 
-  /** 原生事件分发给所有监听器 */
   private emit(type: EventType, e: any) {
     this.listeners[type].forEach((cb) => {
       try { cb(e); } catch (err) { console.error("[ws listener error]", err); }
     });
   }
 
-  /** 供 hook 订阅状态变化（open/close/error 触发） */
   subscribeState(cb: () => void) {
     this.stateSubscribers.add(cb);
     return () => this.stateSubscribers.delete(cb);
@@ -64,13 +59,10 @@ class NodeWsInstance {
     });
   }
 
-  /** 添加事件监听；对 open/close/error 做一次快照回放 */
   addListener<T extends EventType>(type: T, cb: (e: T extends "message" ? MessageEvent : any) => void) {
     this.listeners[type].add(cb as any);
 
-    // 晚订阅也能马上获得当前状态
     if (type === "open" && this.ws.readyState === WebSocket.OPEN && this.lastOpen) {
-      // 下一 tick 回放，避免同步调用导致意外 setState
       queueMicrotask(() => (cb as any)(this.lastOpen));
     }
     if (type === "close" && this.ws.readyState === WebSocket.CLOSED && this.lastClose) {
@@ -87,7 +79,6 @@ class NodeWsInstance {
     this.listeners[type].delete(cb);
   }
 
-  /** 发送消息（字符串或对象） */
   sendMessage(data: string | object) {
     if (this.ws.readyState !== WebSocket.OPEN) {
       console.warn("[ws] not connected, message dropped:", data);
@@ -104,7 +95,7 @@ class NodeWsInstance {
   }
 }
 
-/** —— 全局按端口复用的单例池 —— */
+
 const instances = new Map<string | number, NodeWsInstance>();
 export function getLocalNodeWs(port: string | number) {
   if (!instances.has(port)) {

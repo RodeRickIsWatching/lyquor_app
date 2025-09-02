@@ -1,14 +1,9 @@
 import * as React from "react";
 import {
   ArrowUpRightFromSquareIcon,
-  Ban,
-  Check,
   ChevronRight,
-  Command,
   Moon,
-  Pencil,
   Sun,
-  X,
 } from "lucide-react";
 
 import {
@@ -31,9 +26,7 @@ import {
   SidebarMenuSub,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { usePlaygroundTree } from "@/stores/playground-tree-store";
-import { Link, useNavigate } from "react-router";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useThemeStore } from "@/stores/theme-store";
 import { useEffect } from "react";
@@ -61,177 +54,6 @@ const data = {
 
 // 树节点类型定义，避免 any
 type TreeNode = string | [string, ...TreeNode[]];
-
-const PlaygroundMenu = React.memo(() => {
-  const navigate = useNavigate();
-  const playgrounds = usePlaygroundTree((state) => state.playgrounds);
-  const rename = usePlaygroundTree((state) => state.renamePlayground);
-  const remove = usePlaygroundTree((state) => state.removePlayground);
-
-  const [editingId, setEditingId] = React.useState<string | null>(null);
-  const [editingValue, setEditingValue] = React.useState<string>("");
-  const inputRef = React.useRef<HTMLInputElement | null>(null);
-
-  React.useEffect(() => {
-    if (editingId && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [editingId]);
-
-  const startEdit = (id: string, prev: string) => {
-    setEditingId(id);
-    setEditingValue(prev);
-  };
-
-  const commitEdit = (id: string, prev: string) => {
-    const next = editingValue.trim();
-    if (next && next !== prev) {
-      rename(id, next);
-    }
-    setEditingId(null);
-  };
-
-  const cancelEdit = () => {
-    // 使用 rAF 确保本次点击不会“落到”切换后的按钮上
-    requestAnimationFrame(() => setEditingId(null));
-  };
-
-  const handleRemove = (id: string) => {
-    remove(id);
-  };
-
-  if (!playgrounds || playgrounds.length === 0) {
-    return (
-      <SidebarMenuItem>
-        <Collapsible
-          className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-          defaultOpen
-        >
-          <CollapsibleTrigger asChild>
-            <SidebarMenuButton>
-              <ChevronRight className="transition-transform" />
-              Playground
-            </SidebarMenuButton>
-          </CollapsibleTrigger>
-        </Collapsible>
-      </SidebarMenuItem>
-    );
-  }
-
-  return (
-    <SidebarMenuItem>
-      <Collapsible
-        className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
-        defaultOpen
-      >
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton>
-            <ChevronRight className="transition-transform" />
-            Playground
-          </SidebarMenuButton>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <SidebarMenuSub>
-            {playgrounds.map((t) => (
-              <SidebarMenuItem key={t.id} className="flex items-center">
-                <SidebarMenuButton
-                  onClick={() => {
-                    if (editingId !== t.id) navigate(`/playground/${t.id}`);
-                  }}
-                  className="flex-1 data-[active=true]:bg-transparent truncate"
-                >
-                  {editingId === t.id ? (
-                    <input
-                      ref={inputRef}
-                      value={editingValue}
-                      onChange={(e) => setEditingValue(e.target.value)}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          commitEdit(t.id, t.name);
-                        } else if (e.key === "Escape") {
-                          cancelEdit();
-                        }
-                      }}
-                      onBlur={() => commitEdit(t.id, t.name)}
-                      className="w-full bg-transparent outline-none border border-input rounded px-1 h-6 text-sm truncate"
-                    />
-                  ) : (
-                    <span className="truncate max-w-[140px]" title={t.name}>
-                      {t.name}
-                    </span>
-                  )}
-
-                  <div className="flex items-center gap-1 ml-auto">
-                    {editingId === t.id ? (
-                      <>
-                        <Button
-                          className="!p-1 h-fit"
-                          variant="outline"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => commitEdit(t.id, t.name)}
-                        >
-                          <Check className="size-3 text-green-500" />
-                        </Button>
-                        <Button
-                          className="!p-1 h-fit"
-                          variant="outline"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => cancelEdit()}
-                        >
-                          <Ban className="size-3 text-red-500" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          className="!p-1 h-fit"
-                          variant="outline"
-                          aria-label="rename"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => startEdit(t.id, t.name)}
-                        >
-                          <Pencil className="size-3" />
-                        </Button>
-                        <Button
-                          className="!p-1 h-fit"
-                          variant="outline"
-                          aria-label="remove"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => handleRemove(t.id)}
-                        >
-                          <X className="size-3 text-red-500" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenuSub>
-        </CollapsibleContent>
-      </Collapsible>
-    </SidebarMenuItem>
-  );
-});
-
-PlaygroundMenu.displayName = "PlaygroundMenu";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { theme, toggleTheme, setTheme } = useThemeStore();
@@ -288,7 +110,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {/* <PlaygroundMenu /> */}
               {data.tree.map((item, index) => (
                 <Tree key={index} item={item as TreeNode} />
               ))}

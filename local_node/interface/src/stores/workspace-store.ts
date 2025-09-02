@@ -5,7 +5,7 @@ const editorWs = new WebSocket(editorTestnetWs)
 
 editorWs.onopen = () => {
   editorWs.send(JSON.stringify({
-    id: "editor-1", // 请求 id，用来对应回调
+    id: "editor-1",
     type: "tree:get",
     data: { namespace: useWorkspaceStore.getState().activeNameSpace },
   }))
@@ -219,18 +219,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }))
 
 
-    const ns = get().activeNameSpace!
-    const path = computePathFromParent(parentId, index, newNode.name)
+    // const ns = get().activeNameSpace!
+    // const path = computePathFromParent(parentId, index, newNode.name)
 
-    get().send(
-      type === "internal"
-        ? { type: "folder:create", data: { namespace: ns, path } }
-        : { type: "file:create", data: { namespace: ns, path, content: "" } }
-    )
+    // get().send(
+    //   type === "internal"
+    //     ? { type: "folder:create", data: { namespace: ns, path } }
+    //     : { type: "file:create", data: { namespace: ns, path, content: "" } }
+    // )
 
 
-
-    // 返回新 id 供 Arborist 聚焦并进入编辑态（文档要求）
     return { id }
   },
 
@@ -247,11 +245,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       return { tree: newTree }
     })
 
-    const ns = get().activeNameSpace!
-    get().send({
-      type: "tree:move",
-      data: { namespace: ns, dragIds, parentId, index },
-    })
+    // const ns = get().activeNameSpace!
+    // get().send({
+    //   type: "tree:move",
+    //   data: { namespace: ns, dragIds, parentId, index },
+    // })
   },
 
   onRename: ({ id, name }) => {
@@ -261,16 +259,16 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }))
 
 
-    const ns = get().activeNameSpace!
-    const oldPath = id
-    const newPath = computeRenamedPath(id, name)
-    const nodeType = findNodeType(id)
+    // const ns = get().activeNameSpace!
+    // const oldPath = id
+    // const newPath = computeRenamedPath(id, name)
+    // const nodeType = findNodeType(id)
 
-    get().send(
-      nodeType === "folder"
-        ? { type: "folder:rename", data: { namespace: ns, oldPath, newPath } }
-        : { type: "file:rename", data: { namespace: ns, oldPath, newPath } }
-    )
+    // get().send(
+    //   nodeType === "folder"
+    //     ? { type: "folder:rename", data: { namespace: ns, oldPath, newPath } }
+    //     : { type: "file:rename", data: { namespace: ns, oldPath, newPath } }
+    // )
   },
 
   onDelete: ({ ids }) => {
@@ -281,14 +279,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       return { tree, selectedId: sel }
     })
 
-    const ns = get().activeNameSpace!
-    ids.forEach(id => {
-      const nodeType = findNodeType(id)
-      get().send(
-        nodeType === "folder"
-          ? { type: "folder:delete", data: { namespace: ns, path: id } }
-          : { type: "file:delete", data: { namespace: ns, path: id } }
-      )
-    })
+    // const ns = get().activeNameSpace!
+    // ids.forEach(id => {
+    //   const nodeType = findNodeType(id)
+    //   get().send(
+    //     nodeType === "folder"
+    //       ? { type: "folder:delete", data: { namespace: ns, path: id } }
+    //       : { type: "file:delete", data: { namespace: ns, path: id } }
+    //   )
+    // })
   },
 }))

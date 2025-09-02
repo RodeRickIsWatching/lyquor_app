@@ -24,7 +24,6 @@ export function handleTerminal(
   let session = terminalSessions.get(id);
 
   if (!session) {
-    // 启动一个伪终端会话
     const shell = process.env.SHELL || "bash";
 
     const shellProcess = pty.spawn(shell, [], {
@@ -38,12 +37,10 @@ export function handleTerminal(
     session = { process: shellProcess };
     terminalSessions.set(id, session);
 
-    // 监听输出
     shellProcess.onData((d: string) => {
       emit({ type: "terminal.stdout", data: d });
     });
 
-    // 退出
     shellProcess.onExit((e) => {
       emit({ type: "terminal.exit", data: { code: e.exitCode } });
       terminalSessions.delete(id);
@@ -52,7 +49,6 @@ export function handleTerminal(
     emit({ type: "terminal.started", data: { id } });
   }
 
-  // 内置控制指令
   if (realCmd === "__terminate__") {
     session.process.kill("SIGTERM");
     emit({ type: "terminal.terminated", data: { id } });
@@ -61,12 +57,11 @@ export function handleTerminal(
   }
 
   if (realCmd === "__interrupt__") {
-    session.process.write('\x03');   // 用 node-pty 的 write，而不是 stdin.write
+    session.process.write('\x03');
     emit({ type: 'terminal.interrupt', data: { id } });
     return;
   }
 
-  // 普通输入
   if (realCmd) {
     session.process.write(realCmd + "\r");
   }

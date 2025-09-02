@@ -10,10 +10,8 @@ export const SpecificLyquidPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // 从 query 获取 tab 参数，没有就默认 overview
   const tabParam = searchParams.get("tab") ?? "overview";
 
-  // 切换时更新 URL
   const handleTabChange = (value: string) => {
     searchParams.set("tab", value);
     navigate(`?${searchParams.toString()}`, { replace: true });
@@ -36,7 +34,7 @@ export const SpecificLyquidPage = () => {
         <LyquidOverview lyquid_id={lyquid_id} />
       </TabsContent>
       <TabsContent className="[&>div]:h-full" value="playground">
-        <RpcCommand lyquid_id={lyquid_id} />
+        <RpcCommand prefix="ly_" lyquid_id={lyquid_id} />
       </TabsContent>
       <TabsContent className="[&>div]:h-full" value="studio">
         <LyquidStudio lyquid_id={lyquid_id} />

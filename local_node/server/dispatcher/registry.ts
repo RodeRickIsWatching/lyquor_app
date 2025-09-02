@@ -1,7 +1,6 @@
 import { handleTerminal } from './terminal.ts'
 import type { RegistryEntry } from '../interface/index.ts'
 
-// 每个接口注册：key -> { handler, description, path }
 export const dispatcherMap: Record<string, RegistryEntry> = {
   ping: {
     handler: async (data, emit) => {

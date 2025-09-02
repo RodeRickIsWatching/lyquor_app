@@ -32,10 +32,9 @@ function createHandler(dispatch: Function) {
 export function registerWsHandlers({ app }: { app: Hono }) {
   const { wss, injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app })
 
-  // 全局 dispatcher
+  // deprecated
   app.get('/ws', upgradeWebSocket(createHandler(lyquor_dispatch)))
 
-  // editor 专用 dispatcher
   app.get('/editor', upgradeWebSocket(createHandler(editor_dispatch)))
 
   return { injectWebSocket, wss }

@@ -32,7 +32,6 @@ function NodeRenderer({
     dragHandle?: (el: HTMLDivElement | null) => void;
 }) {
     const { selectedId } = useWorkspaceStore()
-    // 内联重命名：自定义渲染器必须自己渲染输入框（对齐文档）
     if (node.isEditing) {
         return (
             <div className="h-[22px]">
@@ -88,19 +87,15 @@ function NodeRenderer({
 
 
 const handleActivate = (n: NodeApi<FileNode>) => {
-    // if (n.data.type === "file") {
     useWorkspaceStore.getState().selectFile(n?.data);
-    // }
 }
 
 export default function WorkspaceTree() {
-    // const [tempSelect, setTempSelect] = useState()
     const rootRef = useRef<any | undefined>(undefined)
     const tempSelected = useRef<any>(undefined)
     const { tree, onCreate, onMove, onRename, onDelete } =
         useWorkspaceStore();
 
-        console.log('tree', tree)
     const dims = useMemo(() => ({ width: "100%" as const, height: 600 }), []);
 
     const handleCreateFile = () => {
@@ -133,10 +128,6 @@ export default function WorkspaceTree() {
                     handleActivate(n);
                     tempSelected.current = n;
                 }}
-            // onActivate={(n)=>{handleActivate(n); tempSelected.current = n;}}
-            // disableDrop={({ parentNode }) =>
-            //   parentNode ? parentNode.isLeaf : false
-            // }
             >
                 {NodeRenderer}
             </Tree>

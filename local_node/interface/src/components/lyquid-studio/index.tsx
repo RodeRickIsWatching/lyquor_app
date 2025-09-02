@@ -16,14 +16,12 @@ const terminalWs = new WebSocket(terminalTestnetWs);
 type Layout = "bottom" | "right";
 const TERM_ID = "lyquid-studio-term";
 
-// ---- 发命令到终端 ----
 function execToTerminal(cmd: string, submit = true) {
   window.dispatchEvent(
     new CustomEvent("exec_cmd", { detail: { id: TERM_ID, cmd, submit } })
   );
 }
 
-// ---- 把编辑器里的代码写入工作目录 ----
 function buildWriteFileCmd(
   workspace: string,
   filename: string,

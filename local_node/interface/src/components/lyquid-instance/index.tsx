@@ -359,20 +359,16 @@ export function LyquidInstance({ lyquid_id }: any) {
 
     return (
         <div className="text-sm overflow-hidden grid grid-cols-1 lg:grid-cols-[420px_minmax(0,1fr)] gap-4">
-            {/* 左侧：上方全局表单 + 保存的 ABI 选择，下方函数列表 */}
             <Card className="flex flex-col h-full overflow-hidden">
                 <CardHeader>
                     <CardTitle>ABI Functions</CardTitle>
-                    <CardDescription>
-                        上方配置基本参数，下方按函数调试发送
-                    </CardDescription>
                 </CardHeader>
                 <CardContent className="h-full overflow-auto space-y-4">
                     {/* Saved ABI selector row */}
                     <div className="flex items-center gap-2">
                         <Select value={currentId} onValueChange={(v) => select(v)}>
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="选择一个已保存的 ABI（或右侧上传）" />
+                                <SelectValue placeholder="Select An ABI" />
                             </SelectTrigger>
                             <SelectContent>
                                 {items?.length === 0 && (
@@ -396,7 +392,7 @@ export function LyquidInstance({ lyquid_id }: any) {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuLabel>当前 ABI</DropdownMenuLabel>
+                                <DropdownMenuLabel>ABI</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     onClick={() => {
@@ -406,62 +402,35 @@ export function LyquidInstance({ lyquid_id }: any) {
                                     }}
                                     disabled={!currentItem}
                                 >
-                                    <Pencil className="w-4 h-4 mr-2" /> 重命名
+                                    <Pencil className="w-4 h-4 mr-2" /> Rename
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setOpenUpload(true)}>
-                                    <Upload className="w-4 h-4 mr-2" /> 新建 / 上传
+                                    <Upload className="w-4 h-4 mr-2" /> Create
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                     className="text-red-600 focus:text-red-600"
                                     onClick={() => setToDeleteId(currentId)}
                                     disabled={!currentItem}
                                 >
-                                    <Trash2 className="w-4 h-4 mr-2" /> 删除
+                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
 
-                    {/* 上半区：表单输入（Advanced 可折叠） */}
                     <div className="space-y-2">
-                        {/* <Accordion type="single" collapsible className="border rounded-lg">
-                            <AccordionItem value="advanced">
-                                <AccordionTrigger className="px-3 py-2 text-sm">
-                                    Advanced
-                                </AccordionTrigger>
-                                <AccordionContent className="space-y-2 px-2">
-                                    <Input
-                                        placeholder="From"
-                                        value={from}
-                                        onChange={(e) => setFrom(e.target.value)}
-                                    />
-                                    <Input
-                                        placeholder="Value"
-                                        value={valueEth}
-                                        onChange={(e) => setValueEth(e.target.value)}
-                                    />
-                                    <Input
-                                        placeholder="Gas Limit"
-                                        value={gas}
-                                        onChange={(e) => setGas(e.target.value)}
-                                    />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion> */}
                         <Input
                             placeholder="Contract Address"
                             value={contract}
                             onChange={(e) => setContract(e.target.value)}
                         />
-                        {/* <Input placeholder="Data" value={dataOverride} onChange={(e) => setDataOverride(e.target.value)} /> */}
                     </div>
 
                     <Separator />
 
                     {!abi && (
                         <div className="text-muted-foreground text-xs">
-                            还没有选择 ABI。请在上方下拉选择，或点击右侧{" "}
-                            <span className="font-medium">Upload ABI</span> 导入。
+                            No ABI has been selected.
                         </div>
                     )}
 
@@ -518,11 +487,10 @@ export function LyquidInstance({ lyquid_id }: any) {
                 </CardContent>
             </Card>
 
-            {/* 右侧：日志 + Upload 按钮（Dialog: file / paste + name） */}
             <Card className="flex flex-col h-full overflow-hidden">
                 <CardHeader>
                     <CardTitle>Logs</CardTitle>
-                    <CardDescription>请求 / 响应 与调试信息</CardDescription>
+                    <CardDescription>Console Board</CardDescription>
                     <CardAction className="flex gap-2">
                         <Button variant="outline" onClick={clearLog}>
                             Clear Logs
@@ -538,15 +506,15 @@ export function LyquidInstance({ lyquid_id }: any) {
             <Dialog open={openUpload} onOpenChange={setOpenUpload}>
                 <DialogContent className="sm:max-w-xl max-h-[80vh] overflow-hidden">
                     <DialogHeader>
-                        <DialogTitle>加载 ABI</DialogTitle>
+                        <DialogTitle>Create</DialogTitle>
                         <DialogDescription>
-                            通过文件或粘贴 JSON 导入，并为其命名以便下次选择。
+                            Import via file or paste JSON and give it a name to make it easier to choose next time.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-2">
                         <Input
-                            placeholder="Name (选填，默认使用文件名或时间戳)"
+                            placeholder="Name (Optional)"
                             value={abiName}
                             onChange={(e) => setAbiName(e.target.value)}
                         />
@@ -555,10 +523,10 @@ export function LyquidInstance({ lyquid_id }: any) {
                     <Tabs defaultValue="file" className="mt-3">
                         <TabsList className="w-full">
                             <TabsTrigger value="file" className="w-1/2">
-                                文件上传
+                                Upload
                             </TabsTrigger>
                             <TabsTrigger value="paste" className="w-1/2">
-                                粘贴 JSON
+                                Paste JSON
                             </TabsTrigger>
                         </TabsList>
 
@@ -578,22 +546,18 @@ export function LyquidInstance({ lyquid_id }: any) {
                             >
                                 <Upload className="size-6 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                             </label>
-                            <div className="text-xs text-muted-foreground mt-2">
-                                支持直接导入 <code>*.json</code>，或含有{" "}
-                                <code>{`{ abi: [...] }`}</code> 的编译产物。
-                            </div>
                         </TabsContent>
 
                         <TabsContent value="paste" className="pt-4 space-y-2">
                             <Textarea
                                 className="!text-xs max-h-[220px] overflow-auto break-all"
-                                placeholder="粘贴一段 ABI JSON（可以是数组或包含 abi 字段的对象）"
+                                placeholder="[]"
                                 value={abiPasteText}
                                 onChange={(e) => setAbiPasteText(e.target.value)}
                             />
                             <div className="flex justify-end">
                                 <Button onClick={onLoadAbiFromPaste}>
-                                    <Clipboard className="w-4 h-4 mr-2" /> 保存并载入
+                                    <Clipboard className="w-4 h-4 mr-2" /> Save
                                 </Button>
                             </div>
                         </TabsContent>
@@ -601,17 +565,16 @@ export function LyquidInstance({ lyquid_id }: any) {
                 </DialogContent>
             </Dialog>
 
-            {/* 重命名对话框 */}
             <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>重命名 ABI</DialogTitle>
+                        <DialogTitle>Rename</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-2">
                         <Input
                             value={newName}
                             onChange={(e) => setNewName(e.target.value)}
-                            placeholder="新的名称"
+                            placeholder="New Name"
                         />
                     </div>
                     <DialogFooter>
@@ -622,27 +585,26 @@ export function LyquidInstance({ lyquid_id }: any) {
                                 setRenameOpen(false);
                             }}
                         >
-                            <Save className="w-4 h-4 mr-2" /> 保存
+                            <Save className="w-4 h-4 mr-2" /> Save
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* 删除确认 */}
             <AlertDialog
                 open={!!toDeleteId}
                 onOpenChange={(open) => !open && setToDeleteId(undefined)}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除该 ABI？</AlertDialogTitle>
+                        <AlertDialogTitle>Remove ABI？</AlertDialogTitle>
                         <AlertDialogDescription>
-                            该操作仅删除本地保存的记录，不影响链上或其他文件。
+                            This operation only deletes locally saved records and does not affect the chain or other files.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setToDeleteId(undefined)}>
-                            取消
+                            Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-red-600 hover:bg-red-700"
@@ -651,7 +613,7 @@ export function LyquidInstance({ lyquid_id }: any) {
                                 setToDeleteId(undefined);
                             }}
                         >
-                            删除
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

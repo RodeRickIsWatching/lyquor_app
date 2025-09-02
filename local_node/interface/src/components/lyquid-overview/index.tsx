@@ -2,11 +2,12 @@ import { lyquorTestnetPort } from "@/constants"
 import { useLocalNodeMetaStore, type LyquidItemMeta } from "@/hooks/use-local-node-meta"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { cn, handleAddChain } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useBlockStore } from "@/hooks/use-block-updater";
 import dayjs from "dayjs";
 import { Button } from "@/components/ui/button";
 import { Metamask } from "@/components/svg/metamask";
+import { handleAddChain } from "@/utils";
 
 export const ChainId = ({ chainId }: { chainId: number }) => {
 

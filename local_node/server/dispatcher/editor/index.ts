@@ -1,4 +1,3 @@
-// /server/dispatcher/editor_dispatch.ts
 import { promises as fs } from "fs";
 import * as path from "path";
 import type { LyquorEvent } from "../../interface";
@@ -7,22 +6,18 @@ import { fileURLToPath } from "url";
 import pkg from "node-7z";
 const { extractFull } = pkg;
 
-// ===== 配置：所有 workspace 的根目录 =====
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const WORKSPACES_ROOT = path.resolve(__dirname, "../../lyquid-editor-workspace");
 const TEMPLATE_ZIP = path.resolve(__dirname, "../../ldk-template.7z");
 
-
-// ====== 公共类型 ======
 export type FileTreeNode = {
   type: "file" | "folder";
-  name: string;      // 基名
-  path: string;      // 相对 namespace 根目录的路径（用 / 分隔）
+  name: string;
+  path: string;
   children?: FileTreeNode[];
 };
 
-// ====== 协议：事件与负载 ======
 export type EditorEventType =
   | "tree:get"
   | "file:read" | "file:write" | "file:create" | "file:delete" | "file:rename"
@@ -48,16 +43,14 @@ type EditorDispatcherMap = {
   [K in EditorEventType]: { handler: Handler<EditorEventPayloads[K]> };
 };
 
-// ====== 工具函数 ======
 async function ensureNamespaceDir(namespace: string): Promise<string> {
   const nsRoot = path.join(WORKSPACES_ROOT, namespace);
   await fs.mkdir(nsRoot, { recursive: true });
   return nsRoot;
 }
 
-/** 规范化并校验相对路径，防止目录穿越 */
 function resolveNsPath(nsRoot: string, rel: string): string {
-  const trimmed = (rel || "").replace(/^[/\\]+/, ""); // 去掉开头的 / \
+  const trimmed = (rel || "").replace(/^[/\\]+/, "");
   const abs = path.resolve(nsRoot, trimmed);
   const nsRootWithSep = nsRoot.endsWith(path.sep) ? nsRoot : nsRoot + path.sep;
   if (!abs.startsWith(nsRootWithSep)) {
@@ -74,37 +67,31 @@ async function pathIsDirectory(absPath: string): Promise<boolean> {
 async function isDirEmpty(dir: string): Promise<boolean> {
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
-    // 如果要忽略噪声文件可在这里过滤 .DS_Store / .gitkeep 等
     return entries.length === 0;
   } catch (e: any) {
-    if (e.code === "ENOENT") return true; // 目录不存在 → 视为“空”
+    if (e.code === "ENOENT") return true;
     throw e;
   }
 }
 
-
 async function extractTemplate7z(zipPath: string, destPath: string) {
   return new Promise<void>((resolve, reject) => {
-    const stream = extractFull(zipPath, destPath, { $bin: "7z" }); // 用系统的 7z
+    const stream = extractFull(zipPath, destPath, { $bin: "7z" });
     stream.on("end", () => resolve());
     stream.on("error", (err: Error) => reject(err));
   });
 }
 
-// ====== Dispatcher 实现 ======
 export const editorDispatcherMap: EditorDispatcherMap = {
-  // -- Tree
   "tree:get": {
     handler: async (data, sink) => {
       const workspaceDir = await ensureNamespaceDir(data.namespace);
 
-      // 如果 workspace 不存在，先拷贝模板
       if (await isDirEmpty(workspaceDir)) {
         await fs.mkdir(workspaceDir, { recursive: true });
         await extractTemplate7z(TEMPLATE_ZIP, workspaceDir);
       }
 
-      // 扫描 workspace
       const tree = await scanDirectory(workspaceDir);
 
       sink({
@@ -114,7 +101,6 @@ export const editorDispatcherMap: EditorDispatcherMap = {
     },
   },
 
-  // -- File
   "file:read": {
     handler: async ({ namespace, path: rel }, sink) => {
       try {
@@ -191,7 +177,6 @@ export const editorDispatcherMap: EditorDispatcherMap = {
     },
   },
 
-  // -- Folder
   "folder:create": {
     handler: async ({ namespace, path: rel }, sink) => {
       try {
@@ -234,7 +219,6 @@ export const editorDispatcherMap: EditorDispatcherMap = {
   },
 } as const;
 
-// ====== 入口：类型安全的分发函数 ======
 export function editor_dispatch<T extends EditorEventType>(
   type: T,
   data: EditorEventPayloads[T],

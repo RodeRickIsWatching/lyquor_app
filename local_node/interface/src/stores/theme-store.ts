@@ -43,7 +43,7 @@ export const useThemeStore = create<ThemeState>()(
       },
     }),
     {
-      name: 'local-theme', // localStorage key
+      name: 'local-theme',
     }
   )
 );

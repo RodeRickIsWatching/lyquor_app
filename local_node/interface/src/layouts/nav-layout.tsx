@@ -45,7 +45,7 @@ export default function NavLayout() {
                       {index != 0 ? (
                         <BreadcrumbSeparator className="hidden md:block" />
                       ) : null}
-                      <BreadcrumbItem className="hidden md:block" key={index}>
+                      <BreadcrumbItem className="hidden md:block" >
                         <BreadcrumbLink href={item.pathname}>
                           {index > 0
                             ? item.pathname

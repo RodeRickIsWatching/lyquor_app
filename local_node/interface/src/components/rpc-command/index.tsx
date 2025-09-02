@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import React, { } from "react";
-import { Circle } from "lucide-react"; // 状态小圆点
+import { Circle } from "lucide-react";
 import { lyquorTestnetPort, lyquorTestnetHttp } from "@/constants";
 import { useLocalNodeWs } from "@/hooks/use-local-node-ws";
 import { lyquidRpcCommands } from "@/utils/method-factory";
@@ -29,7 +29,7 @@ function resolveParams(defaultParams: any, ctx: { lyquid_id?: string }) {
     const raw = JSON.stringify(defaultParams);
     return JSON.parse(
         raw.replace(/<lyquid_id[^>]*>/g, (match) =>
-            ctx.lyquid_id ? ctx.lyquid_id : match  // 没有就保留原占位符
+            ctx.lyquid_id ? ctx.lyquid_id : match
         )
     );
 }
@@ -43,7 +43,7 @@ function pretty(obj: any) {
     }
 }
 
-export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
+export const RpcCommand = ({ prefix = "", lyquid_id }: { prefix: string, lyquid_id?: string }) => {
     const [isConnected, setConnected] = React.useState(false);
 
     const [paramText, setParamText] = React.useState<Record<string, string>>(() => {
@@ -65,9 +65,8 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
         },
         onMessage(msg: any) {
             try {
-                // 优先尝试 JSON pretty print
                 const parsed = JSON.parse(msg.data);
-                if (!parsed.id.includes('ly_')) return
+                if (!parsed?.id?.includes?.(prefix)) return
 
                 appendLog(`<< ${JSON.stringify(parsed, null, 2)}`);
             } catch(e) {
@@ -103,7 +102,7 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
 
 
         const id = idRef.current++
-        const payload = cmd.buildPayload(params, 'ly_' + id, { lyquid_id: lyquid_id ?? "" });
+        const payload = cmd.buildPayload(params, prefix + id, { lyquid_id: lyquid_id ?? "" });
         appendLog(`>> ${payload}`);
         if (cmd?.wsOnly) {
             sendMessage(payload);
@@ -121,12 +120,11 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
 
     return (
         <div className="text-sm overflow-hidden grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4">
-            {/* 左侧 */}
+            {/* Cmd */}
             <Card className="flex flex-col h-full overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>RPC Methods</CardTitle>
-                        <CardDescription>点击展开，配置并发送</CardDescription>
                     </div>
                     <div className="flex items-center gap-1 text-sm">
                         <Circle
@@ -190,11 +188,11 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
                 </CardContent>
             </Card>
 
-            {/* 右侧日志 */}
+            {/* Log */}
             <Card className="flex flex-col h-full overflow-hidden">
                 <CardHeader>
                     <CardTitle>Logs</CardTitle>
-                    <CardDescription>请求 / 响应 与推送消息</CardDescription>
+                    <CardDescription>Console Board</CardDescription>
                     <CardAction >
                         <Button size="sm" onClick={clearLog}>Clear Logs</Button>
                     </CardAction>
