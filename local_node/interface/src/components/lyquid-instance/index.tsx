@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect } from "react";
 import type { Abi, AbiFunction } from "viem";
 import {
@@ -176,13 +174,13 @@ export function LyquidInstance({ lyquid_id }: any) {
     const nodeMeta = lyquid_id ? (nodesByPort?.[lyquorTestnetPort]?.patch?.[lyquid_id] || {}) : {}
 
     const { lyquor_getLatestLyquidInfo = {} }: any = nodeMeta as LyquidItemMeta
-    useEffect(()=>{
-        if(lyquor_getLatestLyquidInfo?.contract){
+    useEffect(() => {
+        if (lyquor_getLatestLyquidInfo?.contract) {
             setContract(lyquor_getLatestLyquidInfo?.contract)
         }
     }, [lyquor_getLatestLyquidInfo?.contract])
 
-    
+
     // pull from vault
     const { items, currentId, select, add, remove, rename, getById } =
         useAbiVault();
@@ -201,19 +199,11 @@ export function LyquidInstance({ lyquid_id }: any) {
     const [abiName, setAbiName] = React.useState("");
     const fileRef = React.useRef<HTMLInputElement | null>(null);
 
-    // global form (top area)
     const [contract, setContract] = React.useState("");
-    const [from, setFrom] = React.useState("");
-    const [valueEth, setValueEth] = React.useState("");
-    const [gas, setGas] = React.useState("");
-    const [dataOverride, setDataOverride] = React.useState("");
 
     // per-function inputs
     const [fnInputs, setFnInputs] = React.useState<
         Record<string, Record<string, string>>
-    >({});
-    const [fnParamsJson, setFnParamsJson] = React.useState<
-        Record<string, string>
     >({});
 
     const parseIncomingAbi = (json: any) => {
@@ -270,6 +260,7 @@ export function LyquidInstance({ lyquid_id }: any) {
     const idRef = React.useRef<number>(1);
 
     const { writeContractAsync } = useWriteContract();
+
     const sendFn = async (fn: AbiFunction) => {
         if (!abi) return appendLog("[warn] 请先选择/上传 ABI");
         if (!contract) return appendLog("[warn] 请输入合约地址");
@@ -278,17 +269,12 @@ export function LyquidInstance({ lyquid_id }: any) {
 
         const key = fnKey(fn);
 
+        // TODO typechain
         let args: any[] = [];
         try {
-            if (fnParamsJson[key] && fnParamsJson[key].trim()) {
-                const arr = JSON.parse(fnParamsJson[key]);
-                if (!Array.isArray(arr)) throw new Error("Params JSON 必须是数组");
-                args = arr;
-            } else {
-                args = (fn.inputs || []).map((i) =>
-                    coerceArg(fnInputs[key]?.[i.name || ""] ?? "", i.type)
-                );
-            }
+            args = (fn.inputs || []).map((i) =>
+                coerceArg(fnInputs[key]?.[i.name || ""] ?? "", i.type)
+            );
         } catch (err: any) {
             return appendLog(`[error] 参数解析失败: ${err.message}`);
         }
@@ -320,25 +306,13 @@ export function LyquidInstance({ lyquid_id }: any) {
             return appendLog(`[error] ABI 编码失败: ${err.message}`);
         }
 
-        const valueWei = valueEth
-            ? (() => {
-                try {
-                    return parseEther(valueEth);
-                } catch {
-                    return undefined;
-                }
-            })()
-            : undefined;
 
         const txForCall = {
-            from: from || undefined,
+            from: undefined,
             to: contract,
-            data:
-                dataOverride && dataOverride.startsWith("0x")
-                    ? (dataOverride as `0x${string}`)
-                    : encoded,
-            gas: gas || undefined,
-            value: valueWei ? `0x${valueWei.toString(16)}` : undefined,
+            data: encoded,
+            gas: undefined,
+            value: undefined,
         } as const;
 
         const method = "eth_call";
@@ -356,14 +330,16 @@ export function LyquidInstance({ lyquid_id }: any) {
 
         const result = await resp.json();
 
-        const decoded = decodeFunctionResult({
-            abi,
-            functionName: fn.name,
-            data: result?.result,
-        });
-
         appendLog(`<< ${JSON.stringify(result, null, 2)}`);
-        appendLog(`<< decode: ${decoded}`);
+
+        if (result?.result) {
+            const decoded = decodeFunctionResult({
+                abi,
+                functionName: fn.name,
+                data: result?.result,
+            });
+            appendLog(`<< decode: ${decoded}`);
+        }
     };
 
     const functions: AbiFunction[] = React.useMemo(() => {

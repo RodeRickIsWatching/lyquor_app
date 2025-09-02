@@ -196,7 +196,7 @@ export const RpcCommand = ({ lyquid_id }: { lyquid_id?: string }) => {
                     <CardTitle>Logs</CardTitle>
                     <CardDescription>请求 / 响应 与推送消息</CardDescription>
                     <CardAction >
-                        <Button onClick={clearLog}>Clear Logs</Button>
+                        <Button size="sm" onClick={clearLog}>Clear Logs</Button>
                     </CardAction>
                 </CardHeader>
                 <Separator />

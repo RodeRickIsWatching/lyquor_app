@@ -100,6 +100,7 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
         <div />
         <div className="flex gap-2">
           <Button
+            disabled
             className="text-xs"
             size="sm"
             variant="outline"
@@ -108,6 +109,7 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
             <Save className="w-4 h-4 mr-1" /> Save
           </Button>
           <Button
+            disabled
             className="text-xs"
             size="sm"
             variant="outline"
@@ -115,7 +117,7 @@ export const LyquidStudio = ({ lyquid_id }: { lyquid_id?: string }) => {
           >
             <Play className="w-4 h-4 mr-1" /> Compile
           </Button>
-          <Button className="text-xs" size="sm" onClick={handleDeploy}>
+          <Button disabled className="text-xs" size="sm" onClick={handleDeploy}>
             <Rocket className="w-4 h-4 mr-1" /> Deploy
           </Button>
         </div>
