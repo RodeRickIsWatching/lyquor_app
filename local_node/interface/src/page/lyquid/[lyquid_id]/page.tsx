@@ -26,8 +26,8 @@ export const SpecificLyquidPage = () => {
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="playground">Playground</TabsTrigger>
-        <TabsTrigger value="studio">Studio</TabsTrigger>
         <TabsTrigger value="instance">Instance</TabsTrigger>
+        <TabsTrigger value="studio">Studio</TabsTrigger>
       </TabsList>
 
       <TabsContent className="[&>div]:h-full" value="overview">
